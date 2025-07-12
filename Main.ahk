@@ -1,4 +1,4 @@
-; Virage GAG Macro [FREE VERSION]
+; Scripter GAG Macro
 
 #SingleInstance, Force
 #NoEnv
@@ -45,6 +45,7 @@ global msgBoxCooldown := 0
 
 global gearAutoActive := 0
 global seedAutoActive := 0
+global merchantAutoActive := 0
 global eggAutoActive  := 0
 global cosmeticAutoActive := 0
 global honeyShopAutoActive := 0
@@ -336,10 +337,16 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
                 }
                 sendCount--
             }
+            if (curentArray.Name = "eggItems") {
+                sendCount ++
+            }
             repeatKey(dir, sendCount)
             repeatKey("Enter")
             repeatKey(dir)
             if ((currentArray.Name = "honeyItems") && (index = 1 || index = 10 || index = 12)) {
+                repeatKey(dir)
+            }
+            if (currentArray.Name = "eggItems") {
                 repeatKey(dir)
             }
         }
@@ -348,9 +355,15 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
     else if (mode = "close") {
 
         if (dir = "up") {
-            repeatKey(dir)
-            repeatKey("Enter")
-            repeatKey(dir, index)
+            if (currentArray.Name = "eggItems") {
+                repeatKey(dir)
+                repeatKey("Enter")
+                repeatKey(dir, (index+.5)*2)
+            } else {
+                repeatKey(dir)
+                repeatKey("Enter")
+                repeatKey(dir, index)
+            }
         }
         else if (dir = "down") {
             repeatKey(dir, index)
@@ -524,15 +537,12 @@ typeString(string, enter := 1, clean := 1) {
 
 dialogueClick(shop) {
 
-    Loop, 5 {
-        Send, {WheelUp}
-        Sleep, 20
-    }
+    
 
     Sleep, 500
 
     if (shop = "gear") {
-        SafeClickRelative(midX + 0.4, midY - 0.1)
+        SafeClickRelative(midX + 0.4, midY - 0.05)
     }
     else if (shop = "honey") {
         SafeClickRelative(midX + 0.4, midY)
@@ -540,10 +550,7 @@ dialogueClick(shop) {
 
     Sleep, 500
 
-    Loop, 5 {
-    Send, {WheelDown}
-        Sleep, 20
-    }
+   
 
     SafeClickRelative(midX, midY)
 
@@ -609,8 +616,8 @@ closeShop(shop, success) {
     if (success) {
 
         Sleep, 500
-        if (shop = "Honey") {
-        uiUniversal("43333311140320", 1, 1)
+        if (shop = "Egg") {
+        uiUniversal("3410", 1, 1)
         }
         else {
             uiUniversal("4330320", 1, 1)
@@ -620,10 +627,12 @@ closeShop(shop, success) {
     else {
 
         ToolTip, % "Error In Detecting " . shop
+        SafeClickRelative(0.66838, 0.25284)
+        Sleep, 100
         SetTimer, HideTooltip, -1500
         SendDiscordMessage(webhookURL, "Failed To Detect " . shop . " Shop Opening [Error]" . (PingSelected ? " <@" . discordUserID . ">" : ""))
         ; failsafe
-        uiUniversal("3332223111133322231111054105")
+        SafeClickRelative(0.5, 0.127)
 
     }
 
@@ -821,20 +830,29 @@ quickDetect(color1, color2, variation := 10, x1Ratio := 0.0, y1Ratio := 0.0, x2R
 
 ; item arrays
 
-seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Tomato Seed"
-             , "Cauliflower Seed", "Watermelon Seed", "Rafflesia Seed"
-             , "Green Apple Seed", "Avocado Seed", "Banana Seed", "Pineapple Seed"
-             , "Kiwi Seed", "Bell Pepper Seed", "Prickly Pear Seed", "Loquat Seed"
-             , "Feijoa Seed", "Pitcher Plant", "Sugar Apple"]
+seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Orange Tulip"
+             , "Tomato Seed", "Daffodil Seed", "Watermelon Seed"
+             , "Pumpkin Seed", "Apple Seed", "Bamboo Seed", "Coconut Seed"
+             , "Cactus Seed", "Dragon Fruit Seed", "Mango Seed", "Grape Seed"
+             , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed", "Ember Lily"
+	     , "Sugar Apple", "Burning Bud", "Giant Pinecone Seed"]
 
-gearItems := ["Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler"
-             , "Godly Sprinkler", "Magnifying Glass", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot"]
+gearItems := ["Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat"
+             , "Godly Sprinkler", "Magnifying Glass", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot"
+             , "Levelup Lollipop"]
 
 eggItems := ["Common Egg", "Common Summer Egg", "Rare Summer Egg", "Mythical Egg", "Paradise Egg"
-             , "Bee Egg", "Bug Egg"]
+             , "Bug Egg"]
 
 cosmeticItems := ["Cosmetic 1", "Cosmetic 2", "Cosmetic 3", "Cosmetic 4", "Cosmetic 5"
              , "Cosmetic 6",  "Cosmetic 7", "Cosmetic 8", "Cosmetic 9"]
+
+skyMerchantItems := ["Night Staff", "Star Caller", "Mutation Spray Cloudtouched"]
+
+honeyMerchantItems := ["Flower Seed Pack", "Honey Sprinkler", "Bee Egg", "Bee Crate", "Honey Crafters Crate"]
+
+summerSeedMerchantItems := ["Cauliflower", "Rafflesia", "Green Apple", "Avocado", "Banana", "Pineapple"
+            , "Kiwi", "Bell Pepper", "Prickly Pear", "Loquat", "Feijoa", "Pitcher Plant"]
 
 ; honeyItems := ["Flower Seed Pack", "placeHolder1", "Lavender Seed", "Nectarshade Seed", "Nectarine Seed", "Hive Fruit Seed", "Pollen Rader", "Nectar Staff"
 ;             , "Honey Sprinkler", "Bee Egg", "placeHolder2", "Bee Crate", "placeHolder3", "Honey Comb", "Bee Chair", "Honey Torch", "Honey Walkway"]
@@ -906,7 +924,7 @@ ShowGui:
     Gui, Margin, 10, 10
     Gui, Color, 0x202020
     Gui, Font, s9 cWhite, Segoe UI
-    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Cosmetics|Settings|Credits
+    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Cosmetics|Sky|Honey|Summer|Settings|Credits
 
     Gui, Tab, 1
     Gui, Font, s9 c90EE90 Bold, Segoe UI
@@ -966,6 +984,56 @@ ShowGui:
         Gui, Add, Checkbox, % "x50 y" y " vEggItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % eggItems[A_Index]
     }
 
+    Gui, Tab, 5
+    Gui, Font, s9 ce87b07 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 ce87b07, Sky Merchant
+    IniRead, SelectAllSkyMerchantItems, %settingsFile%, SkyMerchant, SelectAllSkyMerchantItems, 0
+    Gui, Add, Checkbox, % "x50 y90 vSelectAllSkyMerchantItems gHandleSelectAll ce87b07 " . (SelectAllSkyMerchantItems ? "Checked" : ""), Select All Sky Merchant Items
+    Loop, % skyMerchantItems.Length() {
+        IniRead, eVal, %settingsFile%, SkyMerchant, Item%A_Index%, 0
+        y := 125 + (A_Index - 1) * 25
+        Gui, Add, Checkbox, % "x50 y" y " vSkyMerchantItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % skyMerchantItems[A_Index]
+    }
+
+    Gui, Tab, 6
+    Gui, Font, s9 ce87b07 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 ce87b07, Honey Merchant
+    IniRead, SelectAllHoneyMerchantItems, %settingsFile%, HoneyMerchant, SelectAllHoneyMerchantItems, 0
+    Gui, Add, Checkbox, % "x50 y90 vSelectAllHoneyMerchantItems gHandleSelectAll ce87b07 " . (SelectAllHoneyMerchantItems ? "Checked" : ""), Select All Honey Merchant Items
+    Loop, % honeyMerchantItems.Length() {
+        IniRead, eVal, %settingsFile%, HoneyMerchant, Item%A_Index%, 0
+        y := 125 + (A_Index - 1) * 25
+        Gui, Add, Checkbox, % "x50 y" y " vHoneyMerchantItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % honeyMerchantItems[A_Index]
+    }
+
+    Gui, Tab, 7
+    Gui, Font, s9 c90EE90 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 c90EE90, Summer Merchant
+    IniRead, SelectAllSummerSeeds, %settingsFile%, SummerMerchant, SelectAllSummerSeeds, 0
+    Gui, Add, Checkbox, % "x50 y90 vSelectAllSummerSeeds gHandleSelectAll c90EE90 " . (SelectAllSummerSeeds ? "Checked" : ""), Select All Summer Seeds
+    Loop, % summerSeedMerchantItems.Length() {
+        IniRead, sVal, %settingsFile%, SummerMerchant, Item%A_Index%, 0
+        if (A_Index > 18) {
+            col := 350
+            idx := A_Index - 18
+            yBase := 125
+        }
+        else if (A_Index > 9) {
+            col := 200
+            idx := A_Index - 10
+            yBase := 125
+        }
+        else {
+            col := 50
+            idx := A_Index
+            yBase := 100
+        }
+        y := yBase + (idx * 25)
+        Gui, Add, Checkbox, % "x" col " y" y " vSummerSeedItem" A_Index " gHandleSelectAll cD3D3D3 " . (sVal ? "Checked" : ""), % summerSeedMerchantItems[A_Index]
+    }
+
+    
+
     /*
     Gui, Tab, 4
     Gui, Font, s9 ce8ac07 Bold, Segoe UI
@@ -989,7 +1057,7 @@ ShowGui:
         y := 125 + (A_Index - 1) * 25
         Gui, Add, Checkbox, % "x40 y" y " vCraftItem" A_Index " gHandleSelectAll cD3D3D3 " . (cVal ? "Checked" : ""), % craftItems[A_Index]
     }
- 
+    
 
     Gui, Add, GroupBox, x270 y50 w230 h380 cBF40BF, Crafting Tools
 
@@ -1000,7 +1068,10 @@ ShowGui:
         y := 125 + (A_Index - 1) * 25
         Gui, Add, Checkbox, % "x280 y" y " vCraftItem2" A_Index " gHandleSelectAll cD3D3D3 " . (c2Val ? "Checked" : ""), % craftItems2[A_Index]
     }
+
     */
+
+    
 
     Gui, Tab, 4
     Gui, Font, s9 cD41551 Bold, Segoe UI
@@ -1008,7 +1079,7 @@ ShowGui:
     IniRead, BuyAllCosmetics, %settingsFile%, Cosmetic, BuyAllCosmetics, 0
     Gui, Add, Checkbox, % "x50 y90 vBuyAllCosmetics cD41551 " . (BuyAllCosmetics ? "Checked" : ""), Buy All Cosmetics
 
-    Gui, Tab, 5
+    Gui, Tab, 8
     Gui, Font, s9 cWhite Bold, Segoe UI
 
     ; opt1 := (selectedResolution = 1 ? "Checked" : "")
@@ -1084,7 +1155,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Button, x50 y335 w150 h40 gStartScanMultiInstance Background202020, Start Macro (F5)
     Gui, Add, Button, x320 y335 w150 h40 gQuit Background202020, Stop Macro (F7)
 
-    Gui, Tab, 6
+    Gui, Tab, 9
     Gui, Font, s9 cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Credits
 
@@ -1102,12 +1173,17 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Font, s8 cWhite, Segoe UI
     Gui, Add, Text, x300 y96 w180 h40, Greatly helped to modify the macro to make it better and more consistent.
 
+    Gui, Add, Picture, x240 y140 w48 h48, % mainDir "Images\\Scripter.png"
+    Gui, Font, s10 cWhite Bold, Segoe UI
+    Gui, Add, Text, x300 y140 w180 h24, Scripter
+    Gui, Font, s8 cWhite, Segoe UI
+    Gui, Add, Text, x300 y166 w180 h40, Made this current version of the macro!
+
     Gui, Font, s9 cWhite Bold, Segoe UI
     Gui, Add, Text, x40 y274 w200 h20, Extra Resources:
     Gui, Font, s8 cD3D3D3 Underline, Segoe UI
-    Gui, Add, Link, x40 y294 w300 h16, Join the <a href="https://discord.com/invite/BPPSAG8MN5">Discord Server</a>!
-    Gui, Add, Link, x40 y314 w300 h16, Check the <a href="https://github.com/VirageRoblox/Virage-Grow-A-Garden-Macro/releases/latest">Github</a> for the latest macro updates!
-    Gui, Add, Link, x40 y334 w300 h16, Watch the latest macro <a href="https://www.youtube.com/@VirageRoblox">tutorial</a> on Youtube!
+    Gui, Add, Link, x40 y294 w300 h16, Check the <a href="https://github.com/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest">Github</a> for the latest macro updates!
+    Gui, Add, Link, x40 y314 w300 h16, Watch the latest macro <a href="https://www.youtube.com/@ScriptAndPlayGames">tutorial</a> on Youtube!
     ; Gui, Font, s9 cWhite norm, Segoe UI
     ; Gui, Add, GroupBox, x23 y50 w475 h340 cD7A9E3, Donate
     ; Gui, Font, s8 cD7A9E3 Bold, Segoe UI
@@ -1117,7 +1193,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     ; Gui, Add, Button, x50 y270 w100 h25 gDonate vDonate2500 BackgroundF0F0F0, 2500 Robux
     ; Gui, Add, Button, x50 y330 w100 h25 gDonate vDonate10000 BackgroundF0F0F0, 10000 Robux
     
-    Gui, Show, w520 h460, Virage Premium GAG Macro [FREE VERSION]
+    Gui, Show, w520 h460, Scripter GAG Macro [PET MUTATIONS]
 
 Return
 
@@ -1215,7 +1291,7 @@ HandleSelectAll:
     Gui, Submit, NoHide
 
     if (SubStr(A_GuiControl, 1, 9) = "SelectAll") {
-        group := SubStr(A_GuiControl, 10)  ; seeds, gears, eggs
+        group := SubStr(A_GuiControl, 10)  ; seeds, gears, eggs, sky, honey, summer
         controlVar := A_GuiControl
         Loop {
             item := group . "Item" . A_Index
@@ -1224,10 +1300,10 @@ HandleSelectAll:
             GuiControl,, %item%, % %controlVar%
         }
     }
-    else if (RegExMatch(A_GuiControl, "^(Seed|Gear|Egg|Honey)Item\d+$", m)) {
-        group := m1  ; seed, gear, egg
+    else if (RegExMatch(A_GuiControl, "^(Seed|Gear|Egg|SkyMerchant|HoneyMerchant|SummerSeedMerchant)Item\d+$", m)) {
+        group := m1  ; seed, gear, egg, sky, honey, summer
         
-        assign := (group = "Seed" || group = "Gear" || group = "Egg") ? "SelectAll" . group . "s" : "SelectAll" . group
+        assign := (group = "Seed" || group = "Gear" || group = "Egg" || group = "Sky Merchant" || group = "Honey Merchant" || group = "Summer Merchant") ? "SelectAll" . group . "s" : "SelectAll" . group
 
         if (!%A_GuiControl%)
             GuiControl,, %assign%, 0
@@ -1251,6 +1327,21 @@ HandleSelectAll:
     else if (A_GuiControl = "SelectAllHoney") {
         Loop, % realHoneyItems.Length()
             GuiControl,, HoneyItem%A_Index%, % SelectAllHoney
+        Gosub, SaveSettings
+    }
+    else if (A_GuiControl = "SelectAllSkyMerchantItems") {
+        Loop, % skyMerchantItems.Length()
+            GuiControl,, SkyMerchantItem%A_Index%, % SelectAllSkyMerchantItems
+        Gosub, SaveSettings
+    }
+    else if (A_GuiControl = "SelectAllHoneyMerchantItems") {
+        Loop, % honeyMerchantItems.Length()
+            GuiControl,, HoneyMerchantItem%A_Index%, % SelectAllHoneyMerchantItems
+        Gosub, SaveSettings
+    }
+    else if (A_GuiControl = "SelectAllSummerSeeds") {
+        Loop, % summerSeedMerchantItems.Length()
+            GuiControl,, SummerSeedItem%A_Index%, % SelectAllSummerSeeds
         Gosub, SaveSettings
     }
 
@@ -1372,6 +1463,27 @@ UpdateSelectedItems:
             selectedHoneyItems.Push(realHoneyItems[A_Index])
     }
 
+    selectedSkyItems := []
+
+    Loop, % skyMerchantItems.Length() {
+        if (SkyMerchantItem%A_Index%)
+            selectedSkyItems.Push(skyMerchantItems[A_Index])
+    }
+
+    selectedHoneyMerchantItems := []
+
+    Loop, % honeyMerchantItems.Length() {
+        if (honeyMerchantItem%A_Index%)
+            selectedHoneyMerchantItems.Push(honeyMerchantItems[A_Index])
+    }
+
+    selectedSummerItems := []
+
+    Loop, % summerSeedMerchantItems.Length() {
+        if (SummerSeedItem%A_Index%)
+            selectedSummerItems.Push(summerSeedMerchantItems[A_Index])
+    }
+
 Return
 
 GetSelectedItems() {
@@ -1397,6 +1509,21 @@ GetSelectedItems() {
         for _, name in selectedHoneyItems
             result .= "  - " name "`n"
     }
+    if (selectedSkyItems.Length()) {
+        result .= "Sky Merchant Items:`n"
+        for _, name in selectedSkyItems
+            result .= "  - " name "`n"
+    }
+    if (selectedHoneyMerchant.Length()) {
+        result .= "Honey Merchant Items:`n"
+        for _, name in selectedHoneyMerchantItems
+            result .= "  - " name "`n"
+    }
+    if (selectedSummerItems.Length()) {
+        result .= "Summer Merchant Items:`n"
+        for _, name in selectedSummerItems
+            result .= "  - " name "`n"
+    }
 
     return result
     
@@ -1419,6 +1546,9 @@ StartScanMultiInstance:
     ; global lastHoneyShopHour := -1
     global lastDepositHoneyMinute := -1
     global lastCollectPollinatedHour := -1
+    global lastMerchantMinute := -1
+    global lastHoneyMerchantMinute := -1
+    global lastSummerMinute := -1
 
     started := 1
     cycleFinished := 1
@@ -1515,7 +1645,7 @@ StartScanMultiInstance:
                 SendDiscordMessage(webhookURL, "[**CYCLE " . cycleCount . " COMPLETED**]")
                 cycleFinished := 0
                 if (!MultiInstanceMode) {
-                    SetTimer, AutoReconnect, 5000
+                    SetTimer, AutoReconnect, 30000
                 }
             }
             Sleep, 1000
@@ -1549,6 +1679,80 @@ BuySeed:
         Gosub, SeedShopPath
 
 Return
+
+AutoBuyMerchant:
+
+    ; queues if its not the first cycle and the time is a multiple of 30
+    if (cycleCount > 0 && Mod(currentMinute, 30) = 0 && currentMinute != lastMerchantMinute) {
+        lastMerchantMinute := currentMinute
+        SetTimer, PushBuyMerchant, -8000
+    }
+
+Return
+
+PushBuyMerchant: 
+
+    actionQueue.Push("BuyMerchant")
+
+Return
+
+BuyMerchant:
+
+    currentSection := "BuyMerchant"
+    if (selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length())
+        Gosub, MerchantPath
+
+Return
+
+/*
+AutoBuyHoneyMerchant:
+
+    ; queues if its not the first cycle and the time is a multiple of 5
+    if (cycleCount > 0 && Mod(currentMinute, 5) = 0 && currentMinute != lastHoneyMerchantMinute) {
+        lastHoneyMerchantMinute := currentMinute
+        SetTimer, PushBuyHoneyMerchant, -8000
+    }
+
+Return
+
+PushBuyHoneyMerchant: 
+
+    actionQueue.Push("BuyHoneyMerchant")
+
+Return
+
+BuyHoneyMerchant:
+
+    currentSection := "BuyHoneyMerchant"
+    if (selectedHoneyMerchantItems.Length())
+        Gosub, HoneyMerchantPath
+
+Return
+
+AutoBuySummer:
+
+    ; queues if its not the first cycle and the time is a multiple of 5
+    if (cycleCount > 0 && Mod(currentMinute, 30) = 0 && currentMinute != lastSummerMinute) {
+        lastSummerMinute := currentMinute
+        SetTimer, PushBuySummer, -8000
+    }
+
+Return
+
+PushBuySummer: 
+
+    actionQueue.Push("BuySummer")
+
+Return
+
+BuySummer:
+
+    currentSection := "BuySummer"
+    if (selectedSummerItems.Length())
+        Gosub, SummerShopPath
+
+Return
+*/
 
 AutoBuyGear:
 
@@ -1730,6 +1934,18 @@ SetToolTip:
     honeySec := Mod(rem30sec, 60)
     honeyText := (honeySec < 10) ? honeyMin . ":0" . honeySec : honeyMin . ":" . honeySec
 
+    skyMin := rem30sec // 60
+    skySec := Mod(rem30sec, 60)
+    merchantText := (skySec < 10) ? skyMin . ":0" . skySec : skyMin . ":" . skySec
+
+    honeyMerchantMin := rem30sec // 60
+    honeyMerchantSec := Mod(rem30sec, 60)
+    honeyMerchantText := (honeyMerchantSec < 10) ? honeyMerchantMin . ":0" . honeyMerchantSec : honeyMerchantMin . ":" . honeyMerchantSec
+
+    summerMin := rem30sec // 60
+    summerSec := Mod(rem30sec, 60)
+    summerText := (summerSec < 10) ? summerMin . ":0" . summerSec : summerMin . ":" . summerSec
+
     totalSecNow := currentHour * 3600 + currentMinute * 60 + currentSecond
     nextCosHour := (Floor(currentHour/2) + 1) * 2
     nextCosTotal := nextCosHour * 3600
@@ -1774,6 +1990,10 @@ SetToolTip:
     }
     if (AutoCollectPollinated) {
         tooltipText .= "Collect Pollinated: " . collectPollinatedText . "`n"
+    }
+    if (selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
+        tooltipText .= "Merchant: " . merchantText . "`n"
+
     }
 
     if (tooltipText != "") {
@@ -1834,6 +2054,12 @@ SetTimers:
     honeyDepositAutoActive := 1
     SetTimer, AutoDepositHoney, 1000 ; checks every second if it should queue
 
+    if (selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
+        actionQueue.Push("BuyMerchant")
+    }
+    merchantAutoActive := 1
+    SetTimer, AutoBuyMerchant, 1000 ; checks every second if it should queue
+
 Return
 
 /*
@@ -1847,7 +2073,7 @@ VerifyUser(username) {
     whr.SetRequestHeader("Content-Type","application/json")
     whr.Send(reqBody),  whr.WaitForResponse()
     if (whr.Status!=200 || !RegExMatch(whr.ResponseText,"""id"":\s*(\d+)",m))
-        return 0
+        return 1
     userId := m1
 
     ownURL := "https://inventory.roblox.com/v1/users/" userId
@@ -1855,7 +2081,7 @@ VerifyUser(username) {
     whr2 := ComObjCreate("WinHttp.WinHttpRequest.5.1")
     whr2.Open("GET",ownURL,false), whr2.Send(), whr2.WaitForResponse()
     if (whr2.Status!=200)                        ; request itself failed
-        return 0
+        return 1
 
     return !RegExMatch(whr2.ResponseText, """data"":\s*\[\s*\]")
 }
@@ -1895,21 +2121,27 @@ AutoReconnect:
 
     global actionQueue
 
-    if (simpleDetect(0x302927, 0, 0.3988, 0.3548, 0.6047, 0.6674) && simpleDetect(0xFFFFFF, 0, 0.3988, 0.3548, 0.6047, 0.6674) && privateServerLink != "") {
-        started := 0
-        actionQueue := []
-        SetTimer, AutoReconnect, Off
+     
+
+    if (simpleDetect(0x302927, 0, 0.3988, 0.3548, 0.6047, 0.6674) && simpleDetect(0xFFFFFF, 0, 0.3988, 0.3548, 0.6047, 0.6674)) {
+        closeRobuxPrompt()
         Sleep, 500
-        WinClose, % "ahk_id" . firstWindow
-        Sleep, 1000
-        WinClose, % "ahk_id" . firstWindow
-        Sleep, 500
-        Run, % privateServerLink
-        ToolTip, Attempting To Reconnect
-        SetTimer, HideTooltip, -5000
-        SendDiscordMessage(webhookURL, "Lost connection or macro errored, attempting to reconnect..." . (PingSelected ? " <@" . discordUserID . ">" : ""))
-        sleepAmount(15000, 30000)
-        SetTimer, CheckLoadingScreen, 5000
+        if (simpleDetect(0x302927, 0, 0.3988, 0.3548, 0.6047, 0.6674) && simpleDetect(0xFFFFFF, 0, 0.3988, 0.3548, 0.6047, 0.6674)) {
+            started := 0
+            actionQueue := []
+            SetTimer, AutoReconnect, Off
+            Sleep, 500
+            WinClose, % "ahk_id" . firstWindow
+            Sleep, 1000
+            WinClose, % "ahk_id" . firstWindow
+            Sleep, 500
+            SafeClickRelative(0.5165, 0.5823)
+            ToolTip, Attempting To Reconnect
+            SetTimer, HideTooltip, -5000
+            SendDiscordMessage(webhookURL, "Lost connection or macro errored, attempting to reconnect..." . (PingSelected ? " <@" . discordUserID . ">" : ""))
+            sleepAmount(15000, 30000)
+            SetTimer, CheckLoadingScreen, 5000
+        }    
     }
 
 Return
@@ -1967,7 +2199,7 @@ alignment:
     }
 
     Sleep, 1000
-    uiUniversal(11110)
+    SafeClickRelative(0.5, 0.127)
     Sleep, 100
 
     ToolTip, Alignment Complete
@@ -2030,21 +2262,17 @@ characterAlignment:
 
     ; aligns character through spam tping and using the follow camera mode
 
-    sendKeybind(SavedKeybind)
-    Sleep, 10
+    
 
-    repeatKey("Right", 3)
+    
     Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
-    Send, {Enter}
-    Sleep, 10
-    repeatKey("Right", 2)
-    Sleep, 10
-    Send, {Enter}
-    Sleep, 10
-    repeatKey("Left", 2)
+    SafeClickRelative(0.35, 0.127)
+    Sleep, 125
+    SafeClickRelative(0.65, 0.127)
+    Sleep, 125
     }
     Sleep, 10
-    sendKeybind(SavedKeybind)
+    
 
 Return
 
@@ -2061,39 +2289,35 @@ EggShopPath:
     SendDiscordMessage(webhookURL, "**[Egg Cycle]**")
     Sleep, 800
 
-    ; egg 1 sequence
     Send, {w Down}
-    Sleep, 800
-    Send {w Up}
-    sleepAmount(500, 1000)
-    Send {e}
-    Sleep, 100
-    uiUniversal("11114", 0, 0)
-    Sleep, 100
-    quickDetectEgg(0x26EE26, 15, 0.41, 0.65, 0.52, 0.70)
-    Sleep, 800
-    ; egg 2 sequence
-    Send, {w down}
-    Sleep, 200
-    Send, {w up}
-    sleepAmount(100, 1000)
-    Send {e}
-    Sleep, 100
-    uiUniversal("11114", 0, 0)
-    Sleep, 100
-    quickDetectEgg(0x26EE26, 15, 0.41, 0.65, 0.52, 0.70)
-    Sleep, 800
-    ; egg 3 sequence
-    Send, {w down}
-    Sleep, 200
-    Send, {w up}
-    sleepAmount(100, 1000)
-    Send, {e}
-    Sleep, 200
-    uiUniversal("11114", 0, 0)
-    Sleep, 100
-    quickDetectEgg(0x26EE26, 15, 0.41, 0.65, 0.52, 0.70)
-    Sleep, 300
+    Sleep, 500
+    Send, {w Up}
+
+    Send, e
+    Sleep, sleepAmount(1500, 5000)
+
+    SafeClickRelative(0.75, 0.36174)
+    sleepAmount(2500, 5000)
+    ;checks for the shop opening up to 5 times to ensure it doesn't fail
+    Loop, 5 {
+        if (simpleDetect(0x2E92FC, 10, 0.54, 0.2, 0.65, 0.325)) {
+            ToolTip, Egg Shop Opened
+            SetTimer, HideTooltip, -1500
+            SendDiscordMessage(webhookURL, "Egg Shop Opened.")
+            Sleep, 200
+            uiUniversal("33311443333114405550555", 0)
+            Sleep, 100
+            buyUniversal("egg")
+            SendDiscordMessage(webhookURL, "Egg Shop Closed")
+            eggsCompleted = 1
+        }
+        if (eggsCompleted) {
+            break
+        }
+        Sleep, 2000
+    }
+
+    closeShop("egg", eggsCompleted)
 
     closeRobuxPrompt()
     sleepAmount(1250, 2500)
@@ -2105,7 +2329,15 @@ SeedShopPath:
 
     seedsCompleted := 0
 
-    uiUniversal("1111020")
+    SafeClickRelative(0.35, 0.127)
+    Sleep, 100
+    SafeClickRelative(0.5, 0.5)
+    Sleep, 100
+    Click, right, down
+    Sleep, 100
+    SafeMoveRelative(0.75, 0.5)
+    Sleep, 100
+    Click, right, up
     sleepAmount(100, 1000)
     Send, {e}
     SendDiscordMessage(webhookURL, "**[Seed Cycle]**")
@@ -2138,6 +2370,202 @@ SeedShopPath:
     SendDiscordMessage(webhookURL, "**[Seeds Completed]**")
 
 Return
+
+MerchantPath:
+
+    merchantCompleted := 0
+
+    SafeClickRelative(0.35, 0.127)
+    sleepAmount(100, 1000)
+    Send, {s Down}
+    Sleep, 1500
+    Send, {s Up}
+    Sleep, 250
+    Send, {e}
+    SendDiscordMessage(webhookURL, "**[Merchant Cycle]**")
+    sleepAmount(2500, 5000)
+    ; checks for the shop opening up to 5 times to ensure it doesn't fail
+  Loop, 5 {
+        if (simpleDetect(0xF7B211, 10, 0.54, 0.20, 0.65, 0.325)) {
+            ToolTip, Merchant Opened
+            SetTimer, HideTooltip, -1500
+            SendDiscordMessage(webhookURL, "Merchant Opened.")
+            Sleep, 200
+            if (simpleDetect(0x00003A, 10, 0.357, 0.285, 0.359, 0.287)) {
+                ToolTip, Sky Merchant Detected
+                SetTimer, HideTooltip, -1500
+                SendDiscordMessage(webhookURL, "Sky Merchant Detected.")
+                Sleep, 200
+                uiUniversal("3331144333311405550555", 0)
+                Sleep, 100
+                buyUniversal("sky")
+                SendDiscordMessage(webhookURL, "Merchant Closed.")
+                merchantCompleted = 1
+            } else if (simpleDetect(0x00003A, 10, 0.390, 0.282, 0.392, 0.284)) {
+                ToolTip, Honey Merchant Opened
+                SetTimer, HideTooltip, -1500
+                SendDiscordMessage(webhookURL, "Honey Shop Opened.")
+                Sleep, 200
+                uiUniversal("3331144333311405550555", 0)
+                Sleep, 100
+                buyUniversal("honeyMerchant")
+                SendDiscordMessage(webhookURL, "Honey Merchant Closed.")
+                merchantCompleted = 1
+            } else if (simpleDetect(0x00003A, 10, 0.40, 0.259, 0.42, 0.27)) {
+                ToolTip, Summer Shop Opened
+                SetTimer, HideTooltip, -1500
+                SendDiscordMessage(webhookURL, "Summer Shop Opened.")
+                Sleep, 200
+                uiUniversal("3331144333311405550555", 0)
+                Sleep, 100
+                buyUniversal("summer")
+                SendDiscordMessage(webhookURL, "Summer Shop Closed.")
+                merchantCompleted = 1
+            }
+            if (merchantCompleted) {
+                break
+            }
+            Sleep, 1000
+
+        } else {
+            ToolTip, No Merchant Detected
+            SetTimer, HideTooltip, -1500
+            SendDiscordMessage(webhookURL, "No Merchant Detected.")
+            Sleep, 200
+            merchantCompleted = 1
+        }
+    }
+
+    SafeClickRelative(0.66838, 0.25284)
+
+    Sleep, 400
+    SendDiscordMessage(webhookURL, "**[Merchant Completed]**")
+
+/*
+SkyShopPath:
+
+    skyCompleted := 0
+
+    uiUniversal("1111020")
+    sleepAmount(100, 1000)
+    Send, {s Down}
+    Sleep, 1500
+    Send, {s Up}
+    Sleep, 100
+    Send, {e}
+    Sleep, 500
+    SafeClickRelative(0.733, 0.45)
+    SendDiscordMessage(webhookURL, "**[Sky Cycle]**")
+    sleepAmount(2500, 5000)
+    ; checks for the shop opening up to 5 times to ensure it doesn't fail
+    Loop, 5 {
+        if (simpleDetect(0x00003A, 10, 0.357, 0.285, 0.359, 0.287)) {
+            ToolTip, Sky Shop Opened
+            SetTimer, HideTooltip, -1500
+            SendDiscordMessage(webhookURL, "Sky Shop Opened.")
+            Sleep, 200
+            ; right = 1, left = 2, up = 3, down = 4, enter = 0, manual delay = 5
+            uiUniversal("3331144333311405550555", 0)
+            Sleep, 100
+            buyUniversal("sky")
+            SendDiscordMessage(webhookURL, "Sky Shop Closed.")
+            skyCompleted = 1
+        }
+        if (skyCompleted) {
+            break
+        }
+        Sleep, 2000
+    }
+
+    closeShop("sky", skyCompleted)
+
+
+    SendDiscordMessage(webhookURL, "**[Sky Completed]**")
+
+Return
+
+
+HoneyMerchantPath:
+
+    honeyMerchantCompleted := 0
+
+    uiUniversal("1111020")
+    sleepAmount(100, 1000)
+    Send, {s Down}
+    Sleep, 1500
+    Send, {s Up}
+    Sleep, 100
+    Send, {e}
+    Sleep, 500
+    SafeClickRelative(0.733, 0.45)
+    SendDiscordMessage(webhookURL, "**[Honey Merchant Cycle]**")
+    sleepAmount(2500, 5000)
+    ; checks for the shop opening up to 5 times to ensure it doesn't fail
+    Loop, 5 {
+        if (simpleDetect(0x00003A, 10, 0.390, 0.282, 0.392, 0.284)) {
+            ToolTip, Honey Merchant Opened
+            SetTimer, HideTooltip, -1500
+            SendDiscordMessage(webhookURL, "Honey Shop Opened.")
+            Sleep, 200
+            uiUniversal("33311443333114405550555", 0)
+            Sleep, 100
+            buyUniversal("honeyMerchant")
+            SendDiscordMessage(webhookURL, "Honey Merchant Closed.")
+            honeyMerchantCompleted = 1
+        }
+        if (honeyMerchantCompleted) {
+            break
+        }
+        Sleep, 2000
+    }
+
+    closeShop("honeyMerchant", honeyMerchantCompleted)
+
+
+    SendDiscordMessage(webhookURL, "**[Honey Merchant Completed]**")
+
+Return
+
+SummerShopPath:
+
+    summerCompleted := 0
+
+    uiUniversal("1111020")
+    sleepAmount(100, 1000)
+    Send, {s Down}
+    Sleep, 1500
+    Send, {s Up}
+    Sleep, 100
+    Send, {e}
+    SendDiscordMessage(webhookURL, "**[Summmer Cycle]**")
+    sleepAmount(2500, 5000)
+    ; checks for the shop opening up to 5 times to ensure it doesn't fail
+    Loop, 5 {
+        if (simpleDetect(0x2A2737, 10, 0.42407, 0.26041, 0.42407, 0.26041)) {
+            ToolTip, Summer Shop Opened
+            SetTimer, HideTooltip, -1500
+            SendDiscordMessage(webhookURL, "Summer Shop Opened.")
+            Sleep, 200
+            uiUniversal("33311443333114405550555", 0)
+            Sleep, 100
+            buyUniversal("summer")
+            SendDiscordMessage(webhookURL, "Summer Shop Closed.")
+            summerCompleted = 1
+        }
+        if (summerCompleted) {
+            break
+        }
+        Sleep, 2000
+    }
+
+    closeShop("summer", summerCompleted)
+
+
+    SendDiscordMessage(webhookURL, "**[Summer Completed]**")
+
+Return
+
+*/
 
 GearShopPath:
 
@@ -2611,6 +3039,21 @@ SaveSettings:
     Loop, % seedItems.Length()
         IniWrite, % (SeedItem%A_Index%   ? 1 : 0), %settingsFile%, Seed, Item%A_Index%
     IniWrite, % SelectAllSeeds,        %settingsFile%, Seed, SelectAllSeeds
+
+    ; — Sky section —
+    Loop, % skyMerchantItems.Length()
+        IniWrite, % (SkyMerchantItem%A_Index%   ? 1 : 0), %settingsFile%, SkyMerchant, Item%A_Index%
+    IniWrite, % SelectAllSkyMerchantItems,        %settingsFile%, SkyMerchant, SelectAllSkyMerchantItems
+
+    ; — Honey Merchant section —
+    Loop, % honeyMerchantItems.Length()
+        IniWrite, % (HoneyMerchantItem%A_Index%   ? 1 : 0), %settingsFile%, HoneyMerchant, Item%A_Index%
+    IniWrite, % SelectAllHoneyMerchantItems,        %settingsFile%, HoneyMerchant, SelectAllHoneyMerchantItems
+
+    ; — Summer section —
+    Loop, % summerSeedMerchantItems.Length()
+        IniWrite, % (SummerSeedItem%A_Index%   ? 1 : 0), %settingsFile%, SummerMerchant, Item%A_Index%
+    IniWrite, % SelectAllSummerSeeds,        %settingsFile%, SummerMerchant, SelectAllSummerSeeds
 
     ; — Honey section —
     ; first the “place” items 1–10
