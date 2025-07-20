@@ -2409,6 +2409,25 @@ characterAlignment:
 
 Return
 
+closeRobuxShopOdds:
+
+    ; checks to see if the robux shop is open
+
+    if simpleDetect(1313A4, 10, 0.58161, 0.23011, 0.60278, 0.27367) {
+        SafeClickRelative(0.58987, 0.24431)
+        Sleep, 500
+        SafeClickRelative(0.0475, 0.5)
+        Sleep, 500
+    }
+    SafeClickRelative(0.73657, 0.35321)
+    Sleep, 500
+    SafeClickRelative(0.67252, 0.24905)
+    Sleep, 500
+    SafeClickRelative(0.71074, 0.76893)
+    Sleep, 250
+
+Return
+
 ; buying paths
 
 EggShopPath:
@@ -2455,6 +2474,7 @@ EggShopPath:
     Sleep, 500
 
     closeRobuxPrompt()
+    Gosub, closeRobuxShopOdds
     sleepAmount(1250, 2500)
     SendDiscordMessage(webhookURL, "**[Eggs Completed]**")
 
@@ -2499,6 +2519,7 @@ SeedShopPath:
     }
 
     closeShop("seed", seedsCompleted)
+    Gosub, closeRobuxShopOdds
 
     Sleep, 200
     Gosub, alignment
@@ -2589,9 +2610,12 @@ MerchantPath:
     }
 
     SafeClickRelative(0.66838, 0.25284)
+    Gosub, closeRobuxShopOdds
 
     Sleep, 400
     SendDiscordMessage(webhookURL, "**[Merchant Completed]**")
+
+Return
 
 /*
 SkyShopPath:
@@ -2755,6 +2779,7 @@ GearShopPath:
     }
 
     closeShop("gear", gearsCompleted)
+    Gosub, closeRobuxShopOdds
 
     hotbarController(0, 1, "0")
     SendDiscordMessage(webhookURL, "**[Gears Completed]**")
@@ -2815,6 +2840,7 @@ CosmeticShopPath:
     }
 
     hotbarController(0, 1, "0")
+    Gosub, closeRobuxShopOdds
     SendDiscordMessage(webhookURL, "**[Cosmetics Completed]**")
 
 Return
@@ -3031,6 +3057,7 @@ DepositTranquilPath:
     Sleep, 2000
 
     SafeClickRelative(0.5, 0.127)
+    Gosub, closeRobuxShopOdds
     SendDiscordMessage(webhookURL, "**[Tranquil Deposit Completed]**")
 
 Return
@@ -3078,6 +3105,7 @@ ZenPath:
     }
 
     SafeClickRelative(0.66838, 0.25284)
+    Gosub, closeRobuxShopOdds
 
     hotbarController(0, 1, "0")
     SendDiscordMessage(webhookURL, "**[Zen Shop Completed]**")
