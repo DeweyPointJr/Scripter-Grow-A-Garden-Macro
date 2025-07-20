@@ -853,7 +853,7 @@ quickDetect(color1, color2, variation := 10, x1Ratio := 0.0, y1Ratio := 0.0, x2R
 ; item arrays
 
 seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Orange Tulip"
-             , "Tomato Seed", "Daffodil Seed", "Watermelon Seed"
+             , "Tomato Seed", "Corn Seed", "Daffodil Seed", "Watermelon Seed"
              , "Pumpkin Seed", "Apple Seed", "Bamboo Seed", "Coconut Seed"
              , "Cactus Seed", "Dragon Fruit Seed", "Mango Seed", "Grape Seed"
              , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed", "Ember Lily"
@@ -2309,8 +2309,6 @@ alignment:
 
     SafeClickRelative(0.5, 0.5)
     Sleep, 100
-
-    searchitem("recall")
 
     Sleep, 200
 
