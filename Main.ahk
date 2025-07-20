@@ -49,8 +49,8 @@ global merchantAutoActive := 0
 global eggAutoActive  := 0
 global cosmeticAutoActive := 0
 global honeyShopAutoActive := 0
-global honeyDepositAutoActive := 0
-global collectPollinatedAutoActive := 0
+global tranquilDepositAutoActive := 0
+global collectTranquilAutoActive := 0
 
 global GAME_PASS_ID  := 1244038348
 global VERIFIED_KEY  := "VerifiedUser"
@@ -331,19 +331,37 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             repeatKey(dir, sendCount)
         }
         else if (dir = "down") {
-            if ((currentArray.Name = "honeyItems") && (previousIndex = 1 || previousIndex = 10 || previousIndex = 12)) {
-                if (!(findIndex(indexArray, 1, "bool"))) {
-                    sendCount++
+            if ((currentArray.Name = "zenItems") && (previousIndex = 0 || previousIndex = 1 || previousIndex = 5 || previousIndex = 8)) {
+            }
+            ; --- ZenItems skip logic ---
+            if (currentArray.Name = "zenItems") {
+                ; Check if passing over index 6 or 9 and they're not selected
+                for skipIdx, skipVal in [6, 9] {
+                    if (previousIndex < skipVal && index >= skipVal) {
+                        found := false
+                        for _, sel in selectedZenItems {
+                            if (zenItems[skipVal] = sel) {
+                                found := true
+                                break
+                            }
+                        }
+                        if (!found) {
+                            sendCount++
+                        }
+                    }
                 }
-                sendCount--
             }
             if (curentArray.Name = "eggItems") {
                 sendCount ++
             }
+
             repeatKey(dir, sendCount)
             repeatKey("Enter")
             repeatKey(dir)
-            if ((currentArray.Name = "honeyItems") && (index = 1 || index = 10 || index = 12)) {
+            if ((currentArray.Name = "zenItems") && (index = 1 || index = 2 || index = 6 || index = 9)) {
+                repeatKey(dir)
+            }
+            if ((currentArray.Name = "honeyMerchantItems") && (index = 1 || index = 3 || index = 4 || index = 5)) {
                 repeatKey(dir)
             }
             if (currentArray.Name = "eggItems") {
@@ -359,6 +377,10 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
                 repeatKey(dir)
                 repeatKey("Enter")
                 repeatKey(dir, (index+.5)*2)
+            } else if (currentArray.Name = "zenItems") {
+                repeatKey(dir)
+                repeatKey("Enter")
+                repeatKey(dir, (index+4))
             } else {
                 repeatKey(dir)
                 repeatKey("Enter")
@@ -499,11 +521,11 @@ searchItem(search := "nil") {
         if (search = "recall") {
             uiUniversal("22211550554155055", 1, 1)
         }
-        else if (search = "pollinated") {
+        else if (search = "tranquil") {
             uiUniversal("22115505544444444444444444444441111111155055", 1, 1)
         }
-        else if (search = "pollen") {
-            uiUniversal("2211550554444444444111111155055", 1, 1)
+        else if (search = "radar") {
+            uiUniversal("4433055411550", 1, 1)
         }
 
         uiUniversal(10)
@@ -616,8 +638,8 @@ closeShop(shop, success) {
     if (success) {
 
         Sleep, 500
-        if (shop = "Egg") {
-        uiUniversal("3410", 1, 1)
+        if (shop = "Egg" or shop = "Zen") {
+        uiUniversal("33410320", 1, 1)
         }
         else {
             uiUniversal("4330320", 1, 1)
@@ -847,12 +869,17 @@ eggItems := ["Common Egg", "Common Summer Egg", "Rare Summer Egg", "Mythical Egg
 cosmeticItems := ["Cosmetic 1", "Cosmetic 2", "Cosmetic 3", "Cosmetic 4", "Cosmetic 5"
              , "Cosmetic 6",  "Cosmetic 7", "Cosmetic 8", "Cosmetic 9"]
 
+sprayMerchantItems := ["Mutation Spray Wet", "Mutation Spray Windstruck", "Mutation Spray Verdant"]
+
 skyMerchantItems := ["Night Staff", "Star Caller", "Mutation Spray Cloudtouched"]
 
 honeyMerchantItems := ["Flower Seed Pack", "Honey Sprinkler", "Bee Egg", "Bee Crate", "Honey Crafters Crate"]
 
 summerSeedMerchantItems := ["Cauliflower", "Rafflesia", "Green Apple", "Avocado", "Banana", "Pineapple"
             , "Kiwi", "Bell Pepper", "Prickly Pear", "Loquat", "Feijoa", "Pitcher Plant"]
+
+zenItems := ["Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", "Zenflare", "Zen Crate", "Soft Sunshine"
+            , "Koi", "Zen Gnome Crate", "Spiked Mango", "Pet Shard Tranquil"]
 
 ; honeyItems := ["Flower Seed Pack", "placeHolder1", "Lavender Seed", "Nectarshade Seed", "Nectarine Seed", "Hive Fruit Seed", "Pollen Rader", "Nectar Staff"
 ;             , "Honey Sprinkler", "Bee Egg", "placeHolder2", "Bee Crate", "placeHolder3", "Honey Comb", "Bee Chair", "Honey Torch", "Honey Walkway"]
@@ -924,7 +951,7 @@ ShowGui:
     Gui, Margin, 10, 10
     Gui, Color, 0x202020
     Gui, Font, s9 cWhite, Segoe UI
-    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Cosmetics|Sky|Honey|Summer|Settings|Credits
+    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Sprays|Sky|Honey|Summer|Zen|Settings|Credits
 
     Gui, Tab, 1
     Gui, Font, s9 c90EE90 Bold, Segoe UI
@@ -984,11 +1011,22 @@ ShowGui:
         Gui, Add, Checkbox, % "x50 y" y " vEggItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % eggItems[A_Index]
     }
 
+    Gui, Tab, 4
+    Gui, Font, s9 c616161 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 c616161, Spray Merchant
+    IniRead, SelectAllSprayMerchantItems, %settingsFile%, SprayMerchant, SelectAllSprayMerchantItems, 0
+    Gui, Add, Checkbox, % "x50 y90 vSelectAllSprayMerchantItems gHandleSelectAll c616161 " . (SelectAllSprayMerchantItems ? "Checked" : ""), Select All Spray Merchant Items
+    Loop, % sprayMerchantItems.Length() {
+        IniRead, eVal, %settingsFile%, SprayMerchant, Item%A_Index%, 0
+        y := 125 + (A_Index - 1) * 25
+        Gui, Add, Checkbox, % "x50 y" y " vSprayMerchantItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % sprayMerchantItems[A_Index]
+    }
+    
     Gui, Tab, 5
-    Gui, Font, s9 ce87b07 Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 ce87b07, Sky Merchant
+    Gui, Font, s9 c33B1FB Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 c33B1FB, Sky Merchant
     IniRead, SelectAllSkyMerchantItems, %settingsFile%, SkyMerchant, SelectAllSkyMerchantItems, 0
-    Gui, Add, Checkbox, % "x50 y90 vSelectAllSkyMerchantItems gHandleSelectAll ce87b07 " . (SelectAllSkyMerchantItems ? "Checked" : ""), Select All Sky Merchant Items
+    Gui, Add, Checkbox, % "x50 y90 vSelectAllSkyMerchantItems gHandleSelectAll c33B1FB " . (SelectAllSkyMerchantItems ? "Checked" : ""), Select All Sky Merchant Items
     Loop, % skyMerchantItems.Length() {
         IniRead, eVal, %settingsFile%, SkyMerchant, Item%A_Index%, 0
         y := 125 + (A_Index - 1) * 25
@@ -1032,6 +1070,36 @@ ShowGui:
         Gui, Add, Checkbox, % "x" col " y" y " vSummerSeedItem" A_Index " gHandleSelectAll cD3D3D3 " . (sVal ? "Checked" : ""), % summerSeedMerchantItems[A_Index]
     }
 
+    Gui, Tab, 8
+    Gui, Font, s9 cC1ADDB Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 cC1ADDB, Zen Event
+    IniRead, AutoCollectTranquil, %settingsFile%, Zen, AutoCollectTranquil, 0
+    Gui, Add, Checkbox, % "x50 y90 vAutoCollectTranquil cC1ADDB " . (AutoCollectTranquil ? "Checked" : ""), Auto-Collect Tranquil Plants
+    IniRead, AutoDepositTranquil, %settingsFile%, Zen, AutoDepositTranquil, 0
+    Gui, Add, Checkbox, % "x250 y90 vAutoDepositTranquil cC1ADDB " . (AutoDepositTranquil ? "Checked" : ""), Auto-Deposit Tranquil
+    IniRead, SelectAllZen, %settingsFile%, Zen, SelectAllZen, 0
+    Gui, Add, Checkbox, % "x50 y115 vSelectAllZen gHandleSelectAll cC1ADDB " . (SelectAllZen ? "Checked" : ""), Select All Zen Items
+    Loop, % zenItems.Length() {
+        IniRead, sVal, %settingsFile%, Zen, Item%A_Index%, 0
+        if (A_Index > 18) {
+            col := 350
+            idx := A_Index - 18
+            yBase := 145
+        }
+        else if (A_Index > 9) {
+            col := 200
+            idx := A_Index - 10
+            yBase := 145
+        }
+        else {
+            col := 50
+            idx := A_Index
+            yBase := 120
+        }
+        y := yBase + (idx * 25)
+        Gui, Add, Checkbox, % "x" col " y" y " vZenItem" A_Index " gHandleSelectAll cD3D3D3 " . (sVal ? "Checked" : ""), % zenItems[A_Index]
+    }
+
     
 
     /*
@@ -1071,17 +1139,6 @@ ShowGui:
 
     */
 
-    
-
-    Gui, Tab, 4
-    Gui, Font, s9 cD41551 Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 cD41551, Cosmetic Shop
-    IniRead, BuyAllCosmetics, %settingsFile%, Cosmetic, BuyAllCosmetics, 0
-    Gui, Add, Checkbox, % "x50 y90 vBuyAllCosmetics cD41551 " . (BuyAllCosmetics ? "Checked" : ""), Buy All Cosmetics
-
-    Gui, Tab, 8
-    Gui, Font, s9 cWhite Bold, Segoe UI
-
     ; opt1 := (selectedResolution = 1 ? "Checked" : "")
     ; opt2 := (selectedResolution = 2 ? "Checked" : "")
     ; opt3 := (selectedResolution = 3 ? "Checked" : "")
@@ -1095,6 +1152,7 @@ ShowGui:
     ; Gui, Add, Radio, x50 y280 gUpdateResolution c708090 %opt3%, 1920x1080 100`%
     ; Gui, Add, Radio, x50 y300 gUpdateResolution c708090 %opt4%, 1280x720 100`%
 
+    Gui, Tab, 9
     Gui, Font, s9, cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Settings
 
@@ -1105,6 +1163,9 @@ ShowGui:
     IniRead, AutoAlign, %settingsFile%, Main, AutoAlign, 0
     autoColor := AutoAlign ? "c90EE90" : "cD3D3D3"
     Gui, Add, Checkbox, % "x50 y250 vAutoAlign gUpdateSettingColor " . autoColor . (AutoAlign ? " Checked" : ""), Auto-Align
+
+    IniRead, BuyAllCosmetics, %settingsFile%, Cosmetic, BuyAllCosmetics, 0
+    Gui, Add, Checkbox, % "x50 y275 vBuyAllCosmetics cD41551 " . (BuyAllCosmetics ? "Checked" : ""), Buy All Cosmetics
 
     Gui, Font, s8 cD3D3D3 Bold, Segoe UI
     Gui, Add, Text, x50 y90, Webhook URL:
@@ -1155,7 +1216,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Button, x50 y335 w150 h40 gStartScanMultiInstance Background202020, Start Macro (F5)
     Gui, Add, Button, x320 y335 w150 h40 gQuit Background202020, Stop Macro (F7)
 
-    Gui, Tab, 9
+    Gui, Tab, 10
     Gui, Font, s9 cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Credits
 
@@ -1193,7 +1254,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     ; Gui, Add, Button, x50 y270 w100 h25 gDonate vDonate2500 BackgroundF0F0F0, 2500 Robux
     ; Gui, Add, Button, x50 y330 w100 h25 gDonate vDonate10000 BackgroundF0F0F0, 10000 Robux
     
-    Gui, Show, w520 h460, Scripter GAG Macro [PET MUTATIONS]
+    Gui, Show, w520 h460, Scripter GAG Macro [ZEN]
 
 Return
 
@@ -1300,10 +1361,10 @@ HandleSelectAll:
             GuiControl,, %item%, % %controlVar%
         }
     }
-    else if (RegExMatch(A_GuiControl, "^(Seed|Gear|Egg|SkyMerchant|HoneyMerchant|SummerSeedMerchant)Item\d+$", m)) {
+    else if (RegExMatch(A_GuiControl, "^(Seed|Gear|Egg|SprayMerchant|SkyMerchant|HoneyMerchant|SummerSeedMerchant|Zen)Item\d+$", m)) {
         group := m1  ; seed, gear, egg, sky, honey, summer
         
-        assign := (group = "Seed" || group = "Gear" || group = "Egg" || group = "Sky Merchant" || group = "Honey Merchant" || group = "Summer Merchant") ? "SelectAll" . group . "s" : "SelectAll" . group
+        assign := (group = "Seed" || group = "Gear" || group = "Egg" || group = "Spray Merchant" || group = "Sky Merchant" || group = "Honey Merchant" || group = "Summer Merchant" || group = "Zen") ? "SelectAll" . group . "s" : "SelectAll" . group
 
         if (!%A_GuiControl%)
             GuiControl,, %assign%, 0
@@ -1329,6 +1390,11 @@ HandleSelectAll:
             GuiControl,, HoneyItem%A_Index%, % SelectAllHoney
         Gosub, SaveSettings
     }
+    else if (A_GuiControl = "SelectAllSprayMerchantItems") {
+        Loop, % sprayMerchantItems.Length()
+            GuiControl,, SprayMerchantItem%A_Index%, % SelectAllSprayMerchantItems
+        Gosub, SaveSettings
+    }
     else if (A_GuiControl = "SelectAllSkyMerchantItems") {
         Loop, % skyMerchantItems.Length()
             GuiControl,, SkyMerchantItem%A_Index%, % SelectAllSkyMerchantItems
@@ -1342,6 +1408,12 @@ HandleSelectAll:
     else if (A_GuiControl = "SelectAllSummerSeeds") {
         Loop, % summerSeedMerchantItems.Length()
             GuiControl,, SummerSeedItem%A_Index%, % SelectAllSummerSeeds
+        Gosub, SaveSettings
+    }
+
+    else if (A_GuiControl = "SelectAllZen") {
+        Loop, % zenItems.Length()
+            GuiControl,, ZenItem%A_Index%, % SelectAllZen
         Gosub, SaveSettings
     }
 
@@ -1463,6 +1535,13 @@ UpdateSelectedItems:
             selectedHoneyItems.Push(realHoneyItems[A_Index])
     }
 
+    selectedSprayItems := []
+
+    Loop, % sprayMerchantItems.Length() {
+        if (SprayMerchantItem%A_Index%)
+            selectedSprayItems.Push(sprayMerchantItems[A_Index])
+    }
+    
     selectedSkyItems := []
 
     Loop, % skyMerchantItems.Length() {
@@ -1483,6 +1562,13 @@ UpdateSelectedItems:
         if (SummerSeedItem%A_Index%)
             selectedSummerItems.Push(summerSeedMerchantItems[A_Index])
     }
+
+    selectedZenItems := []
+
+    Loop, % zenItems.Length() {
+        if (ZenItem%A_Index%)
+            selectedZenItems.Push(zenItems[A_Index])
+    } 
 
 Return
 
@@ -1509,6 +1595,11 @@ GetSelectedItems() {
         for _, name in selectedHoneyItems
             result .= "  - " name "`n"
     }
+    if (selectedSprayItems.Length()) {
+        result .= "Spray Merchant Items:`n"
+        for _, name in selectedSprayItems
+            result .= "  - " name "`n"
+    }
     if (selectedSkyItems.Length()) {
         result .= "Sky Merchant Items:`n"
         for _, name in selectedSkyItems
@@ -1522,6 +1613,11 @@ GetSelectedItems() {
     if (selectedSummerItems.Length()) {
         result .= "Summer Merchant Items:`n"
         for _, name in selectedSummerItems
+            result .= "  - " name "`n"
+    }
+    if (selectedZenItems.Length()) {
+        result .= "Zen Items:`n"
+        for _, name in selectedZenItems
             result .= "  - " name "`n"
     }
 
@@ -1544,11 +1640,12 @@ StartScanMultiInstance:
     global lastCosmeticShopHour := -1
     global lastHoneyShopMinute := -1
     ; global lastHoneyShopHour := -1
-    global lastDepositHoneyMinute := -1
-    global lastCollectPollinatedHour := -1
+    global lastDepositTranquilMinute := -1
+    global lastCollectTranquilHour := -1
     global lastMerchantMinute := -1
     global lastHoneyMerchantMinute := -1
     global lastSummerMinute := -1
+    global lastZenHour := -1
 
     started := 1
     cycleFinished := 1
@@ -1680,6 +1777,8 @@ BuySeed:
 
 Return
 
+
+
 AutoBuyMerchant:
 
     ; queues if its not the first cycle and the time is a multiple of 30
@@ -1699,7 +1798,7 @@ Return
 BuyMerchant:
 
     currentSection := "BuyMerchant"
-    if (selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length())
+    if (selectedSprayMerchantItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length())
         Gosub, MerchantPath
 
 Return
@@ -1828,27 +1927,27 @@ BuyCosmeticShop:
 
 Return
 
-AutoCollectPollinated:
+AutoCollectTranquil:
 
      ; queues if its not the first cycle, the minute is 0, and the current hour isn't the same as the last hour it was run
-    if (cycleCount > 0 && currentMinute = 0 && currentHour != lastCollectPollinatedHour) {
+    if (cycleCount > 0 && currentMinute = 0 && currentHour != lastCollectTranquilHour) {
         lastHoneyShopHour := currentHour
-        SetTimer, PushCollectPollinated, -600000
+        SetTimer, PushCollectTranquil, -600000
     }
 
 Return
 
-PushCollectPollinated:
+PushCollectTranquil:
 
-    actionQueue.Push("CollectPollinated")
+    actionQueue.Push("CollectTranquil")
 
 Return
 
-CollectPollinated:
+CollectTranquil:
 
-    currentSection := "CollectPollinated"
-    if (AutoCollectPollinated) {
-        Gosub, CollectPollinatedPath
+    currentSection := "CollectTranquil"
+    if (AutoCollectTranquil) {
+        Gosub, CollectTranquilPath
     }
 
 Return
@@ -1873,32 +1972,57 @@ BuyHoneyShop:
 
     currentSection := "BuyHoneyShop"
     if (selectedHoneyItems.Length()) {
-        Gosub, HoneyShop
+        
     }
 
 Return
 
-AutoDepositHoney:
+AutoBuyZen:
+
+    ; queues if its not the first cycle and the time is a multiple of 30
+    if (cycleCount > 0 && Mod(currentMinute, 30) = 0 && currentMinute != lastZenHour) {
+        lastZenHour := currentMinute
+        SetTimer, PushBuyZen, -8000
+    }
+
+Return
+
+PushBuyZen:
+
+    actionQueue.Push("BuyZen")
+
+Return
+
+BuyZen:
+
+    currentSection := "BuyZen"
+    if (selectedZenItems.Length()) {
+        Gosub, ZenPath
+    }
+
+Return
+
+AutomaticDepositTranquil:
 
     ; queues if its not the first cycle and the time is a multiple of 5
-    if (cycleCount > 0 && Mod(currentMinute, 5) = 0 && currentMinute != lastDepositHoneyMinute) {
-        lastDepositHoneyMinute := currentMinute
-        SetTimer, PushDepositHoney, -8000
+    if (cycleCount > 0 && Mod(currentMinute, 5) = 0 && currentMinute != lastDepositTranquilMinute) {
+        lastDepositTranquilMinute := currentMinute
+        SetTimer, PushDepositTranquil, -8000
     }
 
 Return
 
-PushDepositHoney:
+PushDepositTranquil:
 
-    actionQueue.Push("DepositHoney")
+    actionQueue.Push("DepositTranquil")
 
 Return
 
-DepositHoney:
+DepositTranquil:
 
-    currentSection := "DepositHoney"
-    if (AutoHoney) {
-        Gosub, DepositHoneyPath
+    currentSection := "DepositTranquil"
+    if (AutoDepositTranquil) {
+        Gosub, DepositTranquilPath
     }
 
 Return
@@ -1918,9 +2042,9 @@ SetToolTip:
     gearMin := rem5sec // 60
     gearSec := Mod(rem5sec, 60)
     gearText := (gearSec < 10) ? gearMin . ":0" . gearSec : gearMin . ":" . gearSec
-    depositHoneyMin := rem5sec // 60
-    depositHoneySec := Mod(rem5sec, 60)
-    depositHoneyText := (depositHoneySec < 10) ? depositHoneyMin . ":0" . depositHoneySec : depositHoneyMin . ":" . depositHoneySec
+    depositTranquilMin := rem5sec // 60
+    depositTranquilSec := Mod(rem5sec, 60)
+    depositTranquilText := (depositTranquilSec < 10) ? depositTranquilMin . ":0" . depositTranquilSec : depositTranquilMin . ":" . depositTranquilSec
 
     mod30 := Mod(currentMinute, 30)
     rem30min := (mod30 = 0) ? 30 : 30 - mod30
@@ -1930,9 +2054,9 @@ SetToolTip:
     eggMin := rem30sec // 60
     eggSec := Mod(rem30sec, 60)
     eggText := (eggSec < 10) ? eggMin . ":0" . eggSec : eggMin . ":" . eggSec
-    honeyMin := rem30sec // 60
-    honeySec := Mod(rem30sec, 60)
-    honeyText := (honeySec < 10) ? honeyMin . ":0" . honeySec : honeyMin . ":" . honeySec
+    zenMin := rem30sec // 60
+    zenSec := Mod(rem30sec, 60)
+    zenText := (zenSec < 10) ? zenMin . ":0" . zenSec : zenMin . ":" . zenSec
 
     skyMin := rem30sec // 60
     skySec := Mod(rem30sec, 60)
@@ -1965,9 +2089,9 @@ SetToolTip:
     } else {
         remHoneySec := 3600 - (currentMinute * 60 + currentSecond)
     }
-    collectPollinatedMin := remHoneySec // 60
-    collectPollinatedSec := Mod(remHoneySec, 60)
-    collectPollinatedText := (collectPollinatedSec < 10) ? collectPollinatedMin . ":0" . collectPollinatedSec : collectPollinatedMin . ":" . collectPollinatedSec
+    collectTranquilMin := remHoneySec // 60
+    collectTranquilSec := Mod(remHoneySec, 60)
+    collectTranquilText := (collectTranquilSec < 10) ? collectTranquilMin . ":0" . collectTranquilSec : collectTranquilMin . ":" . collectTranquilSec
 
     tooltipText := ""
     if (selectedSeedItems.Length()) {
@@ -1983,17 +2107,20 @@ SetToolTip:
         tooltipText .= "Cosmetic Shop: " . cosText . "`n"
     }
     if (AutoHoney) {
-        tooltipText .= "Deposit Honey: " . depositHoneyText . "`n"
+        tooltipText .= "Deposit Tranquil: " . depositTranquilText . "`n"
     }
     if (selectedHoneyItems.Length()) {
         tooltipText .= "Honey Shop: " . honeyText . "`n"
     }
-    if (AutoCollectPollinated) {
-        tooltipText .= "Collect Pollinated: " . collectPollinatedText . "`n"
+    if (AutoCollectTranquil) {
+        tooltipText .= "Collect Tranquil: " . collectTranquilText . "`n"
     }
-    if (selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
+    if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
         tooltipText .= "Merchant: " . merchantText . "`n"
 
+    }
+    if (selectedZenItems.Length()) {
+        tooltipText .= "Zen Shop: " . zenText . "`n"
     }
 
     if (tooltipText != "") {
@@ -2036,11 +2163,11 @@ SetTimers:
     cosmeticAutoActive := 1
     SetTimer, AutoBuyCosmeticShop, 1000 ; checks every second if it should queue
 
-    if (AutoCollectPollinated) {
-        actionQueue.Push("CollectPollinated")
+    if (AutoCollectTranquil) {
+        actionQueue.Push("CollectTranquil")
     }
-    collectPollinatedAutoActive := 1
-    SetTimer, AutoCollectPollinated, 1000 ; checks every second if it should queue
+    collectTranquilAutoActive := 1
+    SetTimer, AutoCollectTranquil, 1000 ; checks every second if it should queue
 
     if (selectedHoneyItems.Length()) {
         actionQueue.Push("BuyHoneyShop")
@@ -2048,17 +2175,23 @@ SetTimers:
     honeyShopAutoActive := 1
     SetTimer, AutoBuyHoneyShop, 1000 ; checks every second if it should queue
 
-    if (AutoHoney) {
-        actionQueue.Push("DepositHoney")
+    if (AutoDepositTranquil) {
+        actionQueue.Push("DepositTranquil")
     }
-    honeyDepositAutoActive := 1
-    SetTimer, AutoDepositHoney, 1000 ; checks every second if it should queue
+    tranquilDepositAutoActive := 1
+    SetTimer, AutomaticDepositTranquil, 1000 ; checks every second if it should queue
 
-    if (selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
+    if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
         actionQueue.Push("BuyMerchant")
     }
     merchantAutoActive := 1
     SetTimer, AutoBuyMerchant, 1000 ; checks every second if it should queue
+
+    if (selectedZenItems.Length()) {
+        actionQueue.Push("BuyZen")
+    }
+    zenAutoActive := 1
+    SetTimer, AutoBuyZen, 1000
 
 Return
 
@@ -2317,7 +2450,9 @@ EggShopPath:
         Sleep, 2000
     }
 
-    closeShop("egg", eggsCompleted)
+    Send, {\}
+    SafeClickRelative(0.66838, 0.25284)
+    Sleep, 500
 
     closeRobuxPrompt()
     sleepAmount(1250, 2500)
@@ -2326,6 +2461,8 @@ EggShopPath:
 Return
 
 SeedShopPath:
+
+    Gosub, alignment
 
     seedsCompleted := 0
 
@@ -2383,15 +2520,30 @@ MerchantPath:
     Sleep, 250
     Send, {e}
     SendDiscordMessage(webhookURL, "**[Merchant Cycle]**")
+    sleepAmount(2000, 2500)
+    SafeClickRelative(0.733, 0.45)
     sleepAmount(2500, 5000)
     ; checks for the shop opening up to 5 times to ensure it doesn't fail
   Loop, 5 {
         if (simpleDetect(0xF7B211, 10, 0.54, 0.20, 0.65, 0.325)) {
             ToolTip, Merchant Opened
+            repeatKey("\", 2, 50) ; scroll up before detecting so it sees the first item
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Merchant Opened.")
             Sleep, 200
-            if (simpleDetect(0x00003A, 10, 0.357, 0.285, 0.359, 0.287)) {
+            /*if (simpleDetect(0x, 10, 0.357, 0.285, 0.359, 0.287)) {
+                ToolTip, Spray Merchant Detected
+                SetTimer, HideTooltip, -1500
+                SendDiscordMessage(webhookURL, "Spray Merchant Detected.")
+                Sleep, 200
+                uiUniversal("3331144333311405550555", 0)
+                Sleep, 100
+                buyUniversal("spray")
+                SendDiscordMessage(webhookURL, "Merchant Closed.")
+                merchantCompleted = 1
+             else
+            */
+            if (simpleDetect(0x896253, 10, 0.372, 0.436, 0.374, 0.438)) {
                 ToolTip, Sky Merchant Detected
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Sky Merchant Detected.")
@@ -2401,7 +2553,7 @@ MerchantPath:
                 buyUniversal("sky")
                 SendDiscordMessage(webhookURL, "Merchant Closed.")
                 merchantCompleted = 1
-            } else if (simpleDetect(0x00003A, 10, 0.390, 0.282, 0.392, 0.284)) {
+            } else if (simpleDetect(0xD5A208, 10, 0.376, 0.396, 0.378, 0.398)) {
                 ToolTip, Honey Merchant Opened
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Honey Shop Opened.")
@@ -2411,7 +2563,7 @@ MerchantPath:
                 buyUniversal("honeyMerchant")
                 SendDiscordMessage(webhookURL, "Honey Merchant Closed.")
                 merchantCompleted = 1
-            } else if (simpleDetect(0x00003A, 10, 0.40, 0.259, 0.42, 0.27)) {
+            } else if (simpleDetect(0xBCCFD3, 10, 0.37, 0.422, 0.372, 0.424)) {
                 ToolTip, Summer Shop Opened
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Summer Shop Opened.")
@@ -2667,13 +2819,23 @@ CosmeticShopPath:
 
 Return
 
-CollectPollinatedPath:
+CollectTranquilPath:
 
-    SendDiscordMessage(webhookURL, "**[Pollenated Plant Collection Cycle]**")
-    uiUniversal("11110")
+    SendDiscordMessage(webhookURL, "**[Tranquil Plant Collection Cycle]**")
+    Gosub, cameraChange
+    Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+        SafeClickRelative(0.35, 0.127)
+        Sleep, 125
+        SafeClickRelative(0.65, 0.127)
+        Sleep, 125
+    }
+    SafeClickRelative(0.35, 0.127)
+    Sleep, 500
+    Gosub, cameraChange
+    Sleep, 500
+    SafeClickRelative(0.5, 0.127)
     sleepAmount(1000, 2000)
 
-    searchItem("pollen")
     hotbarController(1, 0, "3")
 
     ; left side
@@ -2836,95 +2998,89 @@ CollectPollinatedPath:
     hotbarController(0, 1, "0")
     uiUniversal(11110)
 
-    SendDiscordMessage(webhookURL, "**[Pollenated Plant Collection Completed]**")
+    SendDiscordMessage(webhookURL, "**[Tranquil Plant Collection Completed]**")
+
+    Sleep, 500
+    Gosub, alignment
 
 Return
 
-DepositHoneyPath:
-    depositCount := 0
+DepositTranquilPath:
+    Tooltip, Depositing Tranquil
+    SetTimer, HideTooltip, -1500
 
-    hotbarController(0, 1, "0")
-    uiUniversal("11110")
-    sleepAmount(100, 500)
-    hotbarController(1, 0, "2")
-    sleepAmount(100, 500)
-    SafeClickRelative(midX, midY)
-    sleepAmount(800, 1000)
-    Send, {s Down}
-    Sleep, 2000
-    Send, {s Up}
-    sleepAmount(100, 1000)
-    Loop, 3 {
-        searchItem("pollinated")
-        hotbarController(1, 0, "9")
-        sleepAmount(100, 500)
-        Loop, 2 {
-            Send {e}
-            Sleep, 200
-        }
-        depositCount++
-        SendDiscordMessage(webhookURL, "Depositing/Collecting Honey Try #" . depositCount . ".")
-        Sleep, 1000
-    }
+    SendDiscordMessage(webhookURL, "**[Tranquil Deposit Cycle]**")    
 
-    hotbarController(0, 1, "0")
-    uiUniversal(11110)
-
-    SendDiscordMessage(webhookURL, "**[Honey Deposit Completed]**")
-
-Return
-
-HoneyShop:
-
-    honeyCompleted := 0
-
-    SendDiscordMessage(webhookURL, "**[Honey Shop Cycle]**")
-    uiUniversal("1111020")
+    SafeClickRelative(0.65, 0.127)
     sleepAmount(1000, 2000)
     Send, {d down}
     Sleep, 9050
     Send, {d up}
     sleepAmount(100, 1000)
-    Send, {w down}
-    Sleep, 250
-    Send, {w up}
-    Loop, 2 {
-        Send, {WheelDown}
-        Sleep, 20
-    }
+    Send, {s down}
+    Sleep, 1750
+    Send, {s up}
+    sleepAmount(100, 1000)
+    Send, {d down}
+    Sleep, 500
+    Send, {d up}
     sleepAmount(500, 1500)
     Send, {e}
-    sleepAmount(500, 1500)
-    Loop, 2 {
-        Send, {WheelUp}
-        Sleep, 20
-    }
     sleepAmount(500, 2000)
-    dialogueClick("honey")
+    SafeClickRelative(0.8, 0.6)
+    Sleep, 2000
+
+    SafeClickRelative(0.5, 0.127)
+    SendDiscordMessage(webhookURL, "**[Tranquil Deposit Completed]**")
+
+Return
+
+ZenPath:
+
+    zenCompleted := 0
+
+    SendDiscordMessage(webhookURL, "**[Zen Shop Cycle]**")
+    SafeClickRelative(0.65, 0.127)
+    sleepAmount(1000, 2000)
+    Send, {d down}
+    Sleep, 9050
+    Send, {d up}
+    sleepAmount(100, 1000)
+    Send, {s down}
+    Sleep, 1750
+    Send, {s up}
+    sleepAmount(100, 1000)
+    Send, {d down}
+    Sleep, 500
+    Send, {d up}
+    sleepAmount(500, 1500)
+    Send, {e}
+    sleepAmount(500, 2000)
+    SafeClickRelative(0.8, .397)
     sleepAmount(2500, 5000)
     ; checks for the shop opening up to 5 times to ensure it doesn't fail
     Loop, 5 {
-        if (simpleDetect(0x02EFD3, 10, 0.54, 0.20, 0.65, 0.325)) {
-            ToolTip, Honey Shop Opened
+        if (simpleDetect(0xDDAEC1, 10, 0.54, 0.20, 0.65, 0.325)) {
+            ToolTip, Zen Shop Opened
             SetTimer, HideTooltip, -1500
-            SendDiscordMessage(webhookURL, "Honey Shop Opened.")
+            SendDiscordMessage(webhookURL, "Zen Shop Opened.")
             Sleep, 200
-            uiUniversal("3333114443333311405550555", 0)
+            uiUniversal("33331144433333114405550555", 0)
             Sleep, 100
-            buyUniversal("honey")
-            SendDiscordMessage(webhookURL, "Honey Shop Closed.")
-            honeyCompleted = 1
+            buyUniversal("zen")
+            SendDiscordMessage(webhookURL, "Zen Shop Closed.")
+            zenCompleted = 1
         }
-        if (honeyCompleted) {
+        if (zenCompleted) {
             break
         }
         Sleep, 2000
     }
 
-    closeShop("honey", honeyCompleted)
+    SafeClickRelative(0.66838, 0.25284)
 
     hotbarController(0, 1, "0")
-    SendDiscordMessage(webhookURL, "**[Honey Shop Completed]**")
+    SendDiscordMessage(webhookURL, "**[Zen Shop Completed]**")
 
 Return
 
@@ -3055,17 +3211,22 @@ SaveSettings:
         IniWrite, % (SummerSeedItem%A_Index%   ? 1 : 0), %settingsFile%, SummerMerchant, Item%A_Index%
     IniWrite, % SelectAllSummerSeeds,        %settingsFile%, SummerMerchant, SelectAllSummerSeeds
 
+    ; — Zen section —
+    Loop, % zenItems.Length()
+        IniWrite, % (ZenItem%A_Index%   ? 1 : 0), %settingsFile%, Zen, Item%A_Index%
+    IniWrite, % SelectAllZen,        %settingsFile%, Zen, SelectAllZen
+
     ; — Honey section —
     ; first the “place” items 1–10
     Loop, 10
         IniWrite, % (HoneyItem%A_Index%  ? 1 : 0), %settingsFile%, Honey, Item%A_Index%
     IniWrite, % SelectAllHoney,        %settingsFile%, Honey, SelectAllHoney
-    IniWrite, % AutoHoney,             %settingsFile%, Honey, AutoDepositHoney
+    IniWrite, % AutoDepositTranquil, %settingsFile%, Zen, AutoDepositTranquil
     ; then 11–14
     Loop, % realHoneyItems.Length()
         if (A_Index > 10 && A_Index <= 14)
             IniWrite, % (HoneyItem%A_Index% ? 1 : 0), %settingsFile%, Honey, Item%A_Index%
-    IniWrite, % AutoCollectPollinated, %settingsFile%, Honey, AutoCollectPollinated
+    IniWrite, % AutoCollectTranquil, %settingsFile%, Zen, AutoCollectTranquil
 
     ; — Main section —
     IniWrite, % AutoAlign,             %settingsFile%, Main, AutoAlign
