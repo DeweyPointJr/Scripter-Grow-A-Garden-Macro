@@ -51,6 +51,8 @@ global cosmeticAutoActive := 0
 global honeyShopAutoActive := 0
 global tranquilDepositAutoActive := 0
 global collectTranquilAutoActive := 0
+global corruptDepositAutoActive := 0
+global collectCorruptAutoActive := 0
 
 global GAME_PASS_ID  := 1244038348
 global VERIFIED_KEY  := "VerifiedUser"
@@ -242,13 +244,13 @@ SafeMoveRelative(xRatio, yRatio) {
 
 }
 
-SafeClickRelative(xRatio, yRatio) {
+SafeClickRelative(xRatio, yRatio, clickdown:= "") {
 
     if WinExist("ahk_exe RobloxPlayerBeta.exe") {
         WinGetPos, winX, winY, winW, winH, ahk_exe RobloxPlayerBeta.exe
         clickX := winX + Round(xRatio * winW)
         clickY := winY + Round(yRatio * winH)
-        Click, %clickX%, %clickY%
+        Click, %clickX%, %clickY%, clickdown
     }
 
 }
@@ -331,12 +333,12 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             repeatKey(dir, sendCount)
         }
         else if (dir = "down") {
-            if ((currentArray.Name = "zenItems") && (previousIndex = 0 || previousIndex = 1 || previousIndex = 5 || previousIndex = 8)) {
+            if ((currentArray.Name = "zenItems") && (previousIndex = 0 || previousIndex = 1 || previousIndex = 8 || previousIndex = 11)) {
             }
             ; --- ZenItems skip logic ---
             if (currentArray.Name = "zenItems") {
                 ; Check if passing over index 6 or 9 and they're not selected
-                for skipIdx, skipVal in [6, 9] {
+                for skipIdx, skipVal in [1, 2, 8, 12] {
                     if (previousIndex < skipVal && index >= skipVal) {
                         found := false
                         for _, sel in selectedZenItems {
@@ -358,7 +360,7 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             repeatKey(dir, sendCount)
             repeatKey("Enter")
             repeatKey(dir)
-            if ((currentArray.Name = "zenItems") && (index = 1 || index = 2 || index = 6 || index = 9)) {
+            if ((currentArray.Name = "zenItems") && (index = 1 || index = 2 || index = 8 || index = 12)) {
                 repeatKey(dir)
             }
             if ((currentArray.Name = "honeyMerchantItems") && (index = 1 || index = 3 || index = 4 || index = 5)) {
@@ -513,7 +515,9 @@ searchItem(search := "nil") {
         Return
     }
 
-        uiUniversal("1011143333333333333333333311440", 0)
+        SafeClickRelative(0.13533, 0.052)
+        sleepAmount(100, 1000)
+        SafeClickRelative(0.6095, 0.6439)
         Sleep, 50      
         typeString(search)
         Sleep, 50
@@ -522,7 +526,18 @@ searchItem(search := "nil") {
             uiUniversal("22211550554155055", 1, 1)
         }
         else if (search = "tranquil") {
-            uiUniversal("22115505544444444444444444444441111111155055", 1, 1)
+            SafeClickRelative(0.3099, 0.767)
+            sleep, 250
+            SafeClickRelative(0.346, 0.6818)
+            sleep, 250
+            SafeClickRelative(0.13533, 0.052)
+        }
+        else if (search = "corrupt") {
+            SafeClickRelative(0.3099, 0.767)
+            sleep, 250
+            SafeClickRelative(0.346, 0.6818)
+            sleep, 250
+            SafeClickRelative(0.13533, 0.052)
         }
         else if (search = "radar") {
             uiUniversal("4433055411550", 1, 1)
@@ -857,7 +872,7 @@ seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Orange Tulip"
              , "Pumpkin Seed", "Apple Seed", "Bamboo Seed", "Coconut Seed"
              , "Cactus Seed", "Dragon Fruit Seed", "Mango Seed", "Grape Seed"
              , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed", "Ember Lily"
-	     , "Sugar Apple", "Burning Bud", "Giant Pinecone Seed"]
+	     , "Sugar Apple", "Burning Bud", "Giant Pinecone Seed", "Elder Strawberry Seed"]
 
 gearItems := ["Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat"
              , "Godly Sprinkler", "Magnifying Glass", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot"
@@ -878,8 +893,8 @@ honeyMerchantItems := ["Flower Seed Pack", "Honey Sprinkler", "Bee Egg", "Bee Cr
 summerSeedMerchantItems := ["Cauliflower", "Rafflesia", "Green Apple", "Avocado", "Banana", "Pineapple"
             , "Kiwi", "Bell Pepper", "Prickly Pear", "Loquat", "Feijoa", "Pitcher Plant"]
 
-zenItems := ["Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", "Zenflare", "Zen Crate", "Soft Sunshine"
-            , "Koi", "Zen Gnome Crate", "Spiked Mango", "Pet Shard Tranquil"]
+zenItems := ["Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", "Corrupt Radar", "Zenflare", "Zen Crate", "Sakura Bush", "Soft Sunshine"
+            , "Koi", "Zen Gnome Crate", "Spiked Mango", "Pet Shard Tranquil", "Pet Shard Corrupt", "Raiju"]
 
 ; honeyItems := ["Flower Seed Pack", "placeHolder1", "Lavender Seed", "Nectarshade Seed", "Nectarine Seed", "Hive Fruit Seed", "Pollen Rader", "Nectar Staff"
 ;             , "Honey Sprinkler", "Bee Egg", "placeHolder2", "Bee Crate", "placeHolder3", "Honey Comb", "Bee Chair", "Honey Torch", "Honey Walkway"]
@@ -1075,26 +1090,36 @@ ShowGui:
     Gui, Add, GroupBox, x23 y50 w475 h340 cC1ADDB, Zen Event
     IniRead, AutoCollectTranquil, %settingsFile%, Zen, AutoCollectTranquil, 0
     Gui, Add, Checkbox, % "x50 y90 vAutoCollectTranquil cC1ADDB " . (AutoCollectTranquil ? "Checked" : ""), Auto-Collect Tranquil Plants
-    IniRead, AutoDepositTranquil, %settingsFile%, Zen, AutoDepositTranquil, 0
-    Gui, Add, Checkbox, % "x250 y90 vAutoDepositTranquil cC1ADDB " . (AutoDepositTranquil ? "Checked" : ""), Auto-Deposit Tranquil
+    Gui, Font, s8 cC1ADDB Bold, Segoe UI
+    Gui, Add, Text, x250 y90, Auto-Deposit Tranquil:
+    IniRead, AutoDepositTranquil, %settingsFile%, Zen, AutoDepositTranquil, None
+    Gui, Add, DropDownList, vAutoDepositTranquil gUpdateTranquil x375 y90 w75, None|Tanuki|Tree|Kitsune
+    GuiControl, ChooseString, AutoDepositTranquil, %AutoDepositTranquil%
+    IniRead, AutoCollectCorrupt, %settingsFile%, Zen, AutoCollectCorrupt, 0
+    Gui, Add, Checkbox, % "x50 y115 vAutoCollectCorrupt cB0171A " . (AutoCollectCorrupt ? "Checked" : ""), Auto-Collect Corrupt Plants
+    Gui, Font, s8 cB0171A Bold, Segoe UI
+    Gui, Add, Text, x250 y115, Auto-Deposit Corrupt:
+    IniRead, AutoDepositCorrupt, %settingsFile%, Zen, AutoDepositCorrupt, None
+    Gui, Add, DropDownList, vAutoDepositCorrupt gUpdateCorrupt x375 y115 w75, None|Kitsune
+    GuiControl, ChooseString, AutoDepositCorrupt,  %AutoDepositCorrupt%
     IniRead, SelectAllZen, %settingsFile%, Zen, SelectAllZen, 0
-    Gui, Add, Checkbox, % "x50 y115 vSelectAllZen gHandleSelectAll cC1ADDB " . (SelectAllZen ? "Checked" : ""), Select All Zen Items
+    Gui, Add, Checkbox, % "x50 y140 vSelectAllZen gHandleSelectAll cC1ADDB " . (SelectAllZen ? "Checked" : ""), Select All Zen Items
     Loop, % zenItems.Length() {
         IniRead, sVal, %settingsFile%, Zen, Item%A_Index%, 0
         if (A_Index > 18) {
             col := 350
             idx := A_Index - 18
-            yBase := 145
+            yBase := 170
         }
         else if (A_Index > 9) {
             col := 200
             idx := A_Index - 10
-            yBase := 145
+            yBase := 170
         }
         else {
             col := 50
             idx := A_Index
-            yBase := 120
+            yBase := 145
         }
         y := yBase + (idx * 25)
         Gui, Add, Checkbox, % "x" col " y" y " vZenItem" A_Index " gHandleSelectAll cD3D3D3 " . (sVal ? "Checked" : ""), % zenItems[A_Index]
@@ -1158,14 +1183,14 @@ ShowGui:
 
     IniRead, PingSelected, %settingsFile%, Main, PingSelected, 0
     pingColor := PingSelected ? "c90EE90" : "cD3D3D3"
-    Gui, Add, Checkbox, % "x50 y225 vPingSelected gUpdateSettingColor " . pingColor . (PingSelected ? " Checked" : ""), Discord Pings
+    Gui, Add, Checkbox, % "x50 y255 vPingSelected gUpdateSettingColor " . pingColor . (PingSelected ? " Checked" : ""), Discord Pings
     
     IniRead, AutoAlign, %settingsFile%, Main, AutoAlign, 0
     autoColor := AutoAlign ? "c90EE90" : "cD3D3D3"
-    Gui, Add, Checkbox, % "x50 y250 vAutoAlign gUpdateSettingColor " . autoColor . (AutoAlign ? " Checked" : ""), Auto-Align
+    Gui, Add, Checkbox, % "x50 y280 vAutoAlign gUpdateSettingColor " . autoColor . (AutoAlign ? " Checked" : ""), Auto-Align
 
     IniRead, BuyAllCosmetics, %settingsFile%, Cosmetic, BuyAllCosmetics, 0
-    Gui, Add, Checkbox, % "x50 y275 vBuyAllCosmetics cD41551 " . (BuyAllCosmetics ? "Checked" : ""), Buy All Cosmetics
+    Gui, Add, Checkbox, % "x50 y305 vBuyAllCosmetics cD41551 " . (BuyAllCosmetics ? "Checked" : ""), Buy All Cosmetics
 
     Gui, Font, s8 cD3D3D3 Bold, Segoe UI
     Gui, Add, Text, x50 y90, Webhook URL:
@@ -1211,6 +1236,13 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     IniRead, SavedSpeed, %settingsFile%, Main, MacroSpeed, Stable
     Gui, Add, DropDownList, vSavedSpeed gUpdateSpeed x130 y190 w50, Stable|Fast|Ultra|Max
     GuiControl, ChooseString, SavedSpeed, %SavedSpeed%
+
+    Gui, Font, s8 cD3D3D3 Bold, Segoe UI
+    Gui, Add, Text, x50 y215, Navigation Mode:
+    Gui, Font, s8 cBlack, Segoe UI
+    IniRead, NavigationMode, %settingsFile%, Main, NavigationMode, Settings
+    Gui, Add, DropDownList, vNavigationMode gUpdateNavigationMode x150 y215 w75, Settings|Hotbar
+    GuiControl, ChooseString, NavigationMode, %NavigationMode%
 
     Gui, Font, s10 cWhite Bold, Segoe UI
     Gui, Add, Button, x50 y335 w150 h40 gStartScanMultiInstance Background202020, Start Macro (F5)
@@ -1335,6 +1367,57 @@ UpdateSpeed:
     }
     else {
         MsgBox, 0, Message, % "Macro speed set to " . SavedSpeed . ". Recommended for lower end devices."
+    }
+
+Return
+
+UpdateTranquil:
+
+    Gui, Submit, NoHide
+
+    IniWrite, %AutoDepositTranquil%, %settingsFile%, Zen, AutoDepositTranquil
+    GuiControl, ChooseString, AutoDepositTranquil, %AutoDepositTranquil%
+    if (AutoDepositTranquil = "None") {
+        MsgBox, 0, Disclaimer, % "Macro will not deposit tranquil plants."
+    }
+    else if (AutoDepositTranquil = "Tanuki") {
+        MsgBox, 0, Disclaimer, % "Macro will deposit tranquil plants to the tanuki for Chi."
+    }
+    else if (AutoDepositTranquil = "Tree") {
+        MsgBox, 0, Disclaimer, % "Macro will deposit tranquil plants to the zen tree for random rewards."
+    }
+    else if (AutoDepositTranquil = "Kitsune") {
+        Msgbox, 0, Disclaimer, % "Macro will deposit tranquil plants to the kitsune for kitsune chests."
+    }
+
+Return
+
+UpdateCorrupt:
+
+    Gui, Submit, NoHide
+
+    IniWrite, %AutoDepositCorrupt%, %settingsFile%, Zen, AutoDepositCorrupt
+    GuiControl, ChooseString, AutoDepositCorrupt, %AutoDepositCorrupt%
+    if (AutoDepositCorrupt = "None") {
+        MsgBox, 0, Disclaimer, % "Macro will not deposit corrupt plants."
+    }
+    else if (AutoDepositCorrupt = "Kitsune") {
+        MsgBox, 0, Disclaimer, % "Macro will deposit corrupt plants to the kitsune for kitsune chests."
+    }
+
+Return
+
+UpdateNavigationMode:
+
+    Gui, Submit, NoHide
+
+    IniWrite, %NavigationMode%, %settingsFile%, Main, NavigationMode
+    GuiControl, ChooseString, NavigationMode, %NavigationMode%
+    if (NavigationMode = "Settings") {
+        MsgBox, 0, Disclaimer, % "Navigation mode set to " . NavigationMode . ". Use when UI Navigation starts on the settings icon."
+    }
+    else if (NavigationMode = "Hotbar") {
+        MsgBox, 0, Disclaimer, % "Navigation mode set to " . NavigationMode . ". Use when UI Navigation starts on the hotbar."
     }
 
 Return
@@ -1642,6 +1725,8 @@ StartScanMultiInstance:
     ; global lastHoneyShopHour := -1
     global lastDepositTranquilMinute := -1
     global lastCollectTranquilHour := -1
+    global lastDepositCorruptMinute := -1
+    global lastCollectCorruptHour := -1
     global lastMerchantMinute := -1
     global lastHoneyMerchantMinute := -1
     global lastSummerMinute := -1
@@ -1709,6 +1794,7 @@ StartScanMultiInstance:
 
     while (started) {
         if (actionQueue.Length()) {
+            global cycleFinished := 0
             SetTimer, AutoReconnect, Off
             ToolTip  
             next := actionQueue.RemoveAt(1)
@@ -1731,12 +1817,11 @@ StartScanMultiInstance:
                 Gosub, % next
             }
             if (!actionQueue.MaxIndex()) {
-                cycleFinished := 1
+                global cycleFinished := 1
             }
             Sleep, 500
         } else {
-            Gosub, SetToolTip
-            if (cycleFinished) {
+                Gosub, SetToolTip
                 WinActivate, % "ahk_id " . firstWindow
                 cycleCount++
                 SendDiscordMessage(webhookURL, "[**CYCLE " . cycleCount . " COMPLETED**]")
@@ -1744,7 +1829,6 @@ StartScanMultiInstance:
                 if (!MultiInstanceMode) {
                     SetTimer, AutoReconnect, 30000
                 }
-            }
             Sleep, 1000
         }
     }
@@ -1784,7 +1868,7 @@ AutoBuyMerchant:
     ; queues if its not the first cycle and the time is a multiple of 30
     if (cycleCount > 0 && Mod(currentMinute, 30) = 0 && currentMinute != lastMerchantMinute) {
         lastMerchantMinute := currentMinute
-        SetTimer, PushBuyMerchant, -8000
+        SetTimer, PushBuyMerchant, 1000
     }
 
 Return
@@ -1931,8 +2015,18 @@ AutoCollectTranquil:
 
      ; queues if its not the first cycle, the minute is 0, and the current hour isn't the same as the last hour it was run
     if (cycleCount > 0 && currentMinute = 0 && currentHour != lastCollectTranquilHour) {
-        lastHoneyShopHour := currentHour
+        lastCollectTranquilHour := currentHour
         SetTimer, PushCollectTranquil, -600000
+    }
+
+Return
+
+AutoCollectCorrupt:
+
+     ; queues if its not the first cycle, the minute is 0, and the current hour isn't the same as the last hour it was run
+    if (cycleCount > 0 && currentMinute = 0 && currentHour != lastCollectCorruptHour) {
+        lastCollectCorruptHour := currentHour
+        SetTimer, PushCollectCorrupt, -600000
     }
 
 Return
@@ -1943,11 +2037,26 @@ PushCollectTranquil:
 
 Return
 
+PushCollectCorrupt:
+
+    actionQueue.Push("CollectCorrupt")
+
+Return
+
 CollectTranquil:
 
     currentSection := "CollectTranquil"
     if (AutoCollectTranquil) {
         Gosub, CollectTranquilPath
+    }
+
+Return
+
+CollectCorrupt:
+
+    currentSection := "CollectCorrupt"
+    if (AutoCollectCorrupt) {
+        Gosub, CollectCorruptPath
     }
 
 Return
@@ -2018,120 +2127,154 @@ PushDepositTranquil:
 
 Return
 
+PushDepositCorrupt:
+
+    actionQueue.Push("DepositCorrupt")
+
+Return
+
 DepositTranquil:
 
     currentSection := "DepositTranquil"
-    if (AutoDepositTranquil) {
+    if (AutoDepositTranquil != "None") {
         Gosub, DepositTranquilPath
     }
 
 Return
 
+DepositCorrupt:
+
+    currentSection := "DepositCorrupt"
+    if (AutoDepositCorrupt != "None") {
+        Gosub, DepositCorruptPath
+    }
+
+AutomaticDepositCorrupt:
+
+    ; queues if its not the first cycle and the time is amultiple of 5
+    if (cycleCount > 0 && Mod(currentMinute, 5) = 0 && currentMinute != lastDepositCorruptMinute) {
+        lastDepositCorruptMinute := currentMinute
+        SetTimer, PushDepositCorrupt, -8000
+    }
+
 ; helper labels
 
 SetToolTip:
 
-    mod5 := Mod(currentMinute, 5)
-    rem5min := (mod5 = 0) ? 5 : 5 - mod5
-    rem5sec := rem5min * 60 - currentSecond
-    if (rem5sec < 0)
-        rem5sec := 0
-    seedMin := rem5sec // 60
-    seedSec := Mod(rem5sec, 60)
-    seedText := (seedSec < 10) ? seedMin . ":0" . seedSec : seedMin . ":" . seedSec
-    gearMin := rem5sec // 60
-    gearSec := Mod(rem5sec, 60)
-    gearText := (gearSec < 10) ? gearMin . ":0" . gearSec : gearMin . ":" . gearSec
-    depositTranquilMin := rem5sec // 60
-    depositTranquilSec := Mod(rem5sec, 60)
-    depositTranquilText := (depositTranquilSec < 10) ? depositTranquilMin . ":0" . depositTranquilSec : depositTranquilMin . ":" . depositTranquilSec
+    if (cycleFinished) {
+        mod5 := Mod(currentMinute, 5)
+        rem5min := (mod5 = 0) ? 5 : 5 - mod5
+        rem5sec := rem5min * 60 - currentSecond
+        if (rem5sec < 0)
+            rem5sec := 0
+        seedMin := rem5sec // 60
+        seedSec := Mod(rem5sec, 60)
+        seedText := (seedSec < 10) ? seedMin . ":0" . seedSec : seedMin . ":" . seedSec
+        gearMin := rem5sec // 60
+        gearSec := Mod(rem5sec, 60)
+        gearText := (gearSec < 10) ? gearMin . ":0" . gearSec : gearMin . ":" . gearSec
+        depositTranquilMin := rem5sec // 60
+        depositTranquilSec := Mod(rem5sec, 60)
+        depositTranquilText := (depositTranquilSec < 10) ? depositTranquilMin . ":0" . depositTranquilSec : depositTranquilMin . ":" . depositTranquilSec
+        depositCorruptMin := rem5sec // 60
+        depositCorruptSec := Mod(rem5sec, 60)
+        depositCorruptText := (depositCorruptSec < 10) ? depositCorruptMin . ":0" . depositCorruptSec : depositCorruptMin . ":" . depositCorruptSec
 
-    mod30 := Mod(currentMinute, 30)
-    rem30min := (mod30 = 0) ? 30 : 30 - mod30
-    rem30sec := rem30min * 60 - currentSecond
-    if (rem30sec < 0)
-        rem30sec := 0
-    eggMin := rem30sec // 60
-    eggSec := Mod(rem30sec, 60)
-    eggText := (eggSec < 10) ? eggMin . ":0" . eggSec : eggMin . ":" . eggSec
-    zenMin := rem30sec // 60
-    zenSec := Mod(rem30sec, 60)
-    zenText := (zenSec < 10) ? zenMin . ":0" . zenSec : zenMin . ":" . zenSec
+        mod30 := Mod(currentMinute, 30)
+        rem30min := (mod30 = 0) ? 30 : 30 - mod30
+        rem30sec := rem30min * 60 - currentSecond
+        if (rem30sec < 0)
+            rem30sec := 0
+        eggMin := rem30sec // 60
+        eggSec := Mod(rem30sec, 60)
+        eggText := (eggSec < 10) ? eggMin . ":0" . eggSec : eggMin . ":" . eggSec
+        zenMin := rem30sec // 60
+        zenSec := Mod(rem30sec, 60)
+        zenText := (zenSec < 10) ? zenMin . ":0" . zenSec : zenMin . ":" . zenSec
 
-    skyMin := rem30sec // 60
-    skySec := Mod(rem30sec, 60)
-    merchantText := (skySec < 10) ? skyMin . ":0" . skySec : skyMin . ":" . skySec
+        skyMin := rem30sec // 60
+        skySec := Mod(rem30sec, 60)
+        merchantText := (skySec < 10) ? skyMin . ":0" . skySec : skyMin . ":" . skySec
 
-    honeyMerchantMin := rem30sec // 60
-    honeyMerchantSec := Mod(rem30sec, 60)
-    honeyMerchantText := (honeyMerchantSec < 10) ? honeyMerchantMin . ":0" . honeyMerchantSec : honeyMerchantMin . ":" . honeyMerchantSec
+        honeyMerchantMin := rem30sec // 60
+        honeyMerchantSec := Mod(rem30sec, 60)
+        honeyMerchantText := (honeyMerchantSec < 10) ? honeyMerchantMin . ":0" . honeyMerchantSec : honeyMerchantMin . ":" . honeyMerchantSec
 
-    summerMin := rem30sec // 60
-    summerSec := Mod(rem30sec, 60)
-    summerText := (summerSec < 10) ? summerMin . ":0" . summerSec : summerMin . ":" . summerSec
+        summerMin := rem30sec // 60
+        summerSec := Mod(rem30sec, 60)
+        summerText := (summerSec < 10) ? summerMin . ":0" . summerSec : summerMin . ":" . summerSec
 
-    totalSecNow := currentHour * 3600 + currentMinute * 60 + currentSecond
-    nextCosHour := (Floor(currentHour/2) + 1) * 2
-    nextCosTotal := nextCosHour * 3600
-    remCossec := nextCosTotal - totalSecNow
-    if (remCossec < 0)
-        remCossec := 0
-    cosH := remCossec // 3600
-    cosM := (remCossec - cosH*3600) // 60
-    cosS := Mod(remCossec, 60)
-    if (cosH > 0)
-        cosText := cosH . ":" . (cosM < 10 ? "0" . cosM : cosM) . ":" . (cosS < 10 ? "0" . cosS : cosS)
-    else
-        cosText := cosM . ":" . (cosS < 10 ? "0" . cosS : cosS)
+        totalSecNow := currentHour * 3600 + currentMinute * 60 + currentSecond
+        nextCosHour := (Floor(currentHour/2) + 1) * 2
+        nextCosTotal := nextCosHour * 3600
+        remCossec := nextCosTotal - totalSecNow
+        if (remCossec < 0)
+            remCossec := 0
+        cosH := remCossec // 3600
+        cosM := (remCossec - cosH*3600) // 60
+        cosS := Mod(remCossec, 60)
+        if (cosH > 0)
+            cosText := cosH . ":" . (cosM < 10 ? "0" . cosM : cosM) . ":" . (cosS < 10 ? "0" . cosS : cosS)
+        else
+            cosText := cosM . ":" . (cosS < 10 ? "0" . cosS : cosS)
 
-    if (currentMinute = 0 && currentSecond = 0) {
-        remHoneySec := 0
-    } else {
-        remHoneySec := 3600 - (currentMinute * 60 + currentSecond)
-    }
-    collectTranquilMin := remHoneySec // 60
-    collectTranquilSec := Mod(remHoneySec, 60)
-    collectTranquilText := (collectTranquilSec < 10) ? collectTranquilMin . ":0" . collectTranquilSec : collectTranquilMin . ":" . collectTranquilSec
+        if (currentMinute = 0 && currentSecond = 0) {
+            remHoneySec := 0
+        } else {
+            remHoneySec := 3600 - (currentMinute * 60 + currentSecond)
+        }
+        collectTranquilMin := remHoneySec // 60
+        collectTranquilSec := Mod(remHoneySec, 60)
+        collectTranquilText := (collectTranquilSec < 10) ? collectTranquilMin . ":0" . collectTranquilSec : collectTranquilMin . ":" . collectTranquilSec
 
-    tooltipText := ""
-    if (selectedSeedItems.Length()) {
-        tooltipText .= "Seed Shop: " . seedText . "`n"
-    }
-    if (selectedGearItems.Length()) {
-        tooltipText .= "Gear Shop: " . gearText . "`n"
-    }
-    if (selectedEggItems.Length()) {
-        tooltipText .= "Egg Shop : " . eggText . "`n"
-    }
-    if (BuyAllCosmetics) {
-        tooltipText .= "Cosmetic Shop: " . cosText . "`n"
-    }
-    if (AutoHoney) {
-        tooltipText .= "Deposit Tranquil: " . depositTranquilText . "`n"
-    }
-    if (selectedHoneyItems.Length()) {
-        tooltipText .= "Honey Shop: " . honeyText . "`n"
-    }
-    if (AutoCollectTranquil) {
-        tooltipText .= "Collect Tranquil: " . collectTranquilText . "`n"
-    }
-    if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
-        tooltipText .= "Merchant: " . merchantText . "`n"
+        collectCorruptMin := remHoneySec // 60
+        collectCorruptSec := Mod(remHoneySec, 60)
+        collectCorruptText := (collectCorruptSec < 10) ? collectCorruptMin . ":0" . collectCorruptSec : collectCorruptMin . ":" . collectCorruptSec
 
-    }
-    if (selectedZenItems.Length()) {
-        tooltipText .= "Zen Shop: " . zenText . "`n"
-    }
+        tooltipText := ""
+        if (selectedSeedItems.Length()) {
+            tooltipText .= "Seed Shop: " . seedText . "`n"
+        }
+        if (selectedGearItems.Length()) {
+            tooltipText .= "Gear Shop: " . gearText . "`n"
+        }
+        if (selectedEggItems.Length()) {
+            tooltipText .= "Egg Shop : " . eggText . "`n"
+        }
+        if (BuyAllCosmetics) {
+            tooltipText .= "Cosmetic Shop: " . cosText . "`n"
+        }
+        if (AutoDepositTranquil != "None") {
+            tooltipText .= "Deposit Tranquil: " . depositTranquilText . "`n"
+        }
+        if (AutoDepositCorrupt != "None") {
+            tooltipText .= "Deposit Corrupt: " . depositCorruptText . "`n"
+        }
+        if (selectedHoneyItems.Length()) {
+            tooltipText .= "Honey Shop: " . honeyText . "`n"
+        }
+        if (AutoCollectTranquil) {
+            tooltipText .= "Collect Tranquil: " . collectTranquilText . "`n"
+        }
+        if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
+            tooltipText .= "Merchant: " . merchantText . "`n"
 
-    if (tooltipText != "") {
-        CoordMode, Mouse, Screen
-        MouseGetPos, mX, mY
-        offsetX := 10
-        offsetY := 10
-        ToolTip, % tooltipText, % (mX + offsetX), % (mY + offsetY)
-    } else {
-        ToolTip  ; clears any existing tooltip
+        }
+        if (selectedZenItems.Length()) {
+            tooltipText .= "Zen Shop: " . zenText . "`n"
+        }
+
+        if (tooltipText != "") {
+            CoordMode, Mouse, Screen
+            MouseGetPos, mX, mY
+            offsetX := 10
+            offsetY := 10
+            ToolTip, % tooltipText, % (mX + offsetX), % (mY + offsetY)
+        } else {
+            ToolTip  ; clears any existing tooltip
+        }
     }
+    
 
 Return
 
@@ -2169,17 +2312,29 @@ SetTimers:
     collectTranquilAutoActive := 1
     SetTimer, AutoCollectTranquil, 1000 ; checks every second if it should queue
 
+    if (AutoCollectCorrupt) {
+        actionQueue.Push("CollectCorrupt")
+    }
+    collectCorruptAutoActive := 1
+    SetTimer, AutoCollectCorrupt, 1000 ; checks every second if it should queue
+
     if (selectedHoneyItems.Length()) {
         actionQueue.Push("BuyHoneyShop")
     }
     honeyShopAutoActive := 1
     SetTimer, AutoBuyHoneyShop, 1000 ; checks every second if it should queue
 
-    if (AutoDepositTranquil) {
+    if (AutoDepositTranquil != "None") {
         actionQueue.Push("DepositTranquil")
     }
     tranquilDepositAutoActive := 1
     SetTimer, AutomaticDepositTranquil, 1000 ; checks every second if it should queue
+
+    if (AutoDepositCorrupt != "None") {
+        actionQueue.Push("DepositCorrupt")
+    }
+    corruptDepositAutoActive := 1
+    SetTimer, AutomaticDepositCorrupt, 1000 ; checks every second if it should queue
 
     if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
         actionQueue.Push("BuyMerchant")
@@ -2431,7 +2586,7 @@ Return
 EggShopPath:
 
     Sleep, 100
-    uiUniversal("11110")
+    SafeClickRelative(0.5, 0.127)
     Sleep, 100
     hotbarController(1, 0, "2")
     sleepAmount(100, 1000)
@@ -2455,7 +2610,12 @@ EggShopPath:
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Egg Shop Opened.")
             Sleep, 200
-            uiUniversal("33311443333114405550555", 0)
+            if (NavigationMode == "Settings") {
+                uiUniversal("33311443333114405550555", 0)
+            } else if (NavigationMode == "Hotbar") {
+                repeatKey("up", 50)
+                uiUniversal("332233311443333114405550555", 0)
+            }
             Sleep, 100
             buyUniversal("egg")
             SendDiscordMessage(webhookURL, "Egg Shop Closed")
@@ -2504,7 +2664,12 @@ SeedShopPath:
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Seed Shop Opened.")
             Sleep, 200
-            uiUniversal("33311443333114405550555", 0)
+            if (NavigationMode == "Settings") {
+                uiUniversal("33311443333114405550555", 0)
+            } else if (NavigationMode == "Hotbar") {
+                repeatKey("up", 50)
+                uiUniversal("332233311443333114405550555", 0)
+            }
             Sleep, 100
             buyUniversal("seed")
             SendDiscordMessage(webhookURL, "Seed Shop Closed.")
@@ -2567,7 +2732,12 @@ MerchantPath:
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Sky Merchant Detected.")
                 Sleep, 200
-                uiUniversal("3331144333311405550555", 0)
+                if (NavigationMode == "Settings") {
+                    uiUniversal("33311443333114405550555", 0)
+                } else if (NavigationMode == "Hotbar") {
+                    repeatKey("up", 50)
+                    uiUniversal("332233311443333114405550555", 0)
+                }
                 Sleep, 100
                 buyUniversal("sky")
                 SendDiscordMessage(webhookURL, "Merchant Closed.")
@@ -2577,7 +2747,12 @@ MerchantPath:
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Honey Shop Opened.")
                 Sleep, 200
-                uiUniversal("3331144333311405550555", 0)
+                if (NavigationMode == "Settings") {
+                    uiUniversal("33311443333114405550555", 0)
+                } else if (NavigationMode == "Hotbar") {
+                    repeatKey("up", 50)
+                    uiUniversal("332233311443333114405550555", 0)
+                }
                 Sleep, 100
                 buyUniversal("honeyMerchant")
                 SendDiscordMessage(webhookURL, "Honey Merchant Closed.")
@@ -2587,7 +2762,12 @@ MerchantPath:
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Summer Shop Opened.")
                 Sleep, 200
-                uiUniversal("3331144333311405550555", 0)
+                if (NavigationMode == "Settings") {
+                    uiUniversal("33311443333114405550555", 0)
+                } else if (NavigationMode == "Hotbar") {
+                    repeatKey("up", 50)
+                    uiUniversal("332233311443333114405550555", 0)
+                }
                 Sleep, 100
                 buyUniversal("summer")
                 SendDiscordMessage(webhookURL, "Summer Shop Closed.")
@@ -2746,7 +2926,7 @@ GearShopPath:
     gearsCompleted := 0
 
     hotbarController(0, 1, "0")
-    uiUniversal("11110")
+    SafeClickRelative(0.5, 0.127)
     sleepAmount(100, 500)
     hotbarController(1, 0, "2")
     sleepAmount(100, 500)
@@ -2764,7 +2944,12 @@ GearShopPath:
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Gear Shop Opened.")
             Sleep, 200
-            uiUniversal("33311443333114405550555", 0)
+            if (NavigationMode == "Settings") {
+                uiUniversal("33311443333114405550555", 0)
+            } else if (NavigationMode == "Hotbar") {
+                repeatKey("up", 50)
+                uiUniversal("332233311443333114405550555", 0)
+            }
             Sleep, 100
             buyUniversal("gear")
             SendDiscordMessage(webhookURL, "Gear Shop Closed.")
@@ -2789,7 +2974,7 @@ CosmeticShopPath:
     cosmeticsCompleted := 0
 
     hotbarController(0, 1, "0")
-    uiUniversal("11110")
+    SafeClickRelative(0.5, .127)
     sleepAmount(100, 500)
     hotbarController(1, 0, "2")
     sleepAmount(100, 500)
@@ -2925,7 +3110,7 @@ CollectTranquilPath:
     Send, {d up}
     sleepAmount(200, 500)
 
-    uiUniversal("11110")
+    SafeClickRelative(0.5, 0.127)
 
     ; right side
     SendDiscordMessage(webhookURL, "**[Collecting Right Side...]**")
@@ -2990,7 +3175,7 @@ CollectTranquilPath:
     Send, {a up}
     sleepAmount(200, 500)
 
-    uiUniversal("11110")
+    SafeClickRelative(0.5, 0.127)
 
     ; middle
     SendDiscordMessage(webhookURL, "**[Collecting Middle Area...]**")
@@ -3020,7 +3205,7 @@ CollectTranquilPath:
     sleepAmount(8000, 10000)
 
     hotbarController(0, 1, "0")
-    uiUniversal(11110)
+    SafeClickRelative(0.5, 0.127)
 
     SendDiscordMessage(webhookURL, "**[Tranquil Plant Collection Completed]**")
 
@@ -3029,30 +3214,267 @@ CollectTranquilPath:
 
 Return
 
+CollectCorruptPath:
+
+    SendDiscordMessage(webhookURL, "**[Corrupt Plant Collection Cycle]**")
+    Gosub, cameraChange
+    Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+        SafeClickRelative(0.35, 0.127)
+        Sleep, 125
+        SafeClickRelative(0.65, 0.127)
+        Sleep, 125
+    }
+    SafeClickRelative(0.35, 0.127)
+    Sleep, 500
+    Gosub, cameraChange
+    Sleep, 500
+    SafeClickRelative(0.5, 0.127)
+    sleepAmount(1000, 2000)
+
+    hotbarController(1, 0, "4")
+
+    ; left side
+    SendDiscordMessage(webhookURL, "**[Collecting Left Side...]**")
+    Send, {s down}
+    Sleep, 270
+    Send, {s up}
+    sleepAmount(200, 500)
+    Send, {a down}
+    Sleep, 900
+    Send, {a up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {a down}
+    Sleep, 800
+    Send, {a up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {a down}
+    Sleep, 600
+    Send, {a up}
+    sleepAmount(200, 500)
+
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1200
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1300
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    sleepAmount(200, 500)
+
+    Send, {d down}
+    Sleep, 900
+    Send, {d up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {d down}
+    Sleep, 800
+    Send, {d up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {d down}
+    Sleep, 600
+    Send, {d up}
+    sleepAmount(200, 500)
+
+    SafeClickRelative(0.5, 0.127)
+
+    ; right side
+    SendDiscordMessage(webhookURL, "**[Collecting Right Side...]**")
+    Send, {s down}
+    Sleep, 270
+    Send, {s up}
+    sleepAmount(200, 500)
+    Send, {d down}
+    Sleep, 800
+    Send, {d up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {d down}
+    Sleep, 800
+    Send, {d up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {d down}
+    Sleep, 600
+    Send, {d up}
+    sleepAmount(200, 500)
+
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1200
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1300
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    sleepAmount(200, 500)
+
+    Send, {a down}
+    Sleep, 900
+    Send, {a up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {a down}
+    Sleep, 800
+    Send, {a up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {a down}
+    Sleep, 600
+    Send, {a up}
+    sleepAmount(200, 500)
+
+    SafeClickRelative(0.5, 0.127)
+
+    ; middle
+    SendDiscordMessage(webhookURL, "**[Collecting Middle Area...]**")
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1200
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1300
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    sleepAmount(200, 500)
+    SafeClickRelative(midX, midY)
+    sleepAmount(8000, 10000)
+
+    hotbarController(0, 1, "0")
+    SafeClickRelative(0.5, 0.127)
+
+    SendDiscordMessage(webhookURL, "**[Corrupt Plant Collection Completed]**")
+
+    Sleep, 500
+    Gosub, alignment
+
+Return
+
 DepositTranquilPath:
-    Tooltip, Depositing Tranquil
+    Tooltip, Depositing Tranquil to %AutoDepositTranquil%
     SetTimer, HideTooltip, -1500
 
     SendDiscordMessage(webhookURL, "**[Tranquil Deposit Cycle]**")    
 
     SafeClickRelative(0.65, 0.127)
     sleepAmount(1000, 2000)
-    Send, {d down}
-    Sleep, 9050
-    Send, {d up}
-    sleepAmount(100, 1000)
-    Send, {s down}
-    Sleep, 1750
-    Send, {s up}
-    sleepAmount(100, 1000)
-    Send, {d down}
-    Sleep, 500
-    Send, {d up}
-    sleepAmount(500, 1500)
-    Send, {e}
-    sleepAmount(500, 2000)
-    SafeClickRelative(0.8, 0.6)
-    Sleep, 2000
+    
+    if (AutoDepositTranquil = "Tanuki") {
+        Send, {s down}
+        Sleep, 80
+        Send, {s up}
+        sleepAmount(100, 1000)
+        Send, {d down}
+        Sleep, 8050
+        Send, {d up}
+        sleepAmount(100, 1000)
+        Send, {s down}
+        Sleep, 1750
+        Send, {s up}
+        sleepAmount(100, 1000)
+        Send, {d down}
+        Sleep, 500
+        Send, {d up}
+        sleepAmount(500, 1500)
+        Send, {e}
+        sleepAmount(500, 2000)
+        SafeClickRelative(0.8, 0.6)
+        Sleep, 2000
+    } else if (AutoDepositTranquil = "Tree") {
+        Send, {s down}
+        Sleep, 80
+        Send, {s up}
+        sleepAmount(100, 1000)
+        Send, {d down}
+        Sleep, 8050
+        Send, {d up}
+        sleepAmount(100, 1000)
+        Send, {s down}
+        Sleep, 800
+        Send, {s up}
+        sleepAmount(100, 1000)
+        Send, {d down}
+        Sleep, 400
+        Send, {d up}
+        sleepAmount(500, 1500)
+        Send, {e}
+        sleepAmount(500, 2000)
+        SafeClickRelative(0.8, 0.568)
+        Sleep, 5000
+
+    } else if (AutoDepositTranquil = "Kitsune") {
+        Send, {w down}
+        Sleep, 500
+        Send, {w up}
+        sleepAmount(100, 1000)
+        Send, {d down}
+        Sleep, 10000
+        Send, {d up}
+        sleepAmount(100, 1000)
+        Send, {s down}
+        Sleep, 1400
+        Send, {s up}
+        sleepAmount(100, 1000)
+        Loop, 5 {
+            searchItem("tranquil")
+            sleepAmount(100, 500)
+            Send, {E}
+            sleepamount(100, 1000)
+            SafeClickRelative(0.7644, 0.492)
+            sleepamount(100, 1000)
+        }
+
+    }
 
     SafeClickRelative(0.5, 0.127)
     Gosub, closeRobuxShopOdds
@@ -3064,11 +3486,18 @@ ZenPath:
 
     zenCompleted := 0
 
+    Tooltip, Traveling to Zen Shop
+    SetTimer, HideTooltip, -1500
+
     SendDiscordMessage(webhookURL, "**[Zen Shop Cycle]**")
     SafeClickRelative(0.65, 0.127)
     sleepAmount(1000, 2000)
+    Send, {s down}
+    Sleep, 80
+    Send, {s up}
+    sleepAmount(100, 1000)
     Send, {d down}
-    Sleep, 9050
+    Sleep, 8050
     Send, {d up}
     sleepAmount(100, 1000)
     Send, {s down}
@@ -3090,7 +3519,13 @@ ZenPath:
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Zen Shop Opened.")
             Sleep, 200
-            uiUniversal("33331144433333114405550555", 0)
+            if (NavigationMode == "Settings") {
+                uiUniversal("33331144433333114405550555", 0)
+            } else if (NavigatonMode == "Hotbar") {
+                repeatKey("up", 50)
+                uiUniversal("332233331144433333114405550555", 0)
+            }
+            
             Sleep, 100
             buyUniversal("zen")
             SendDiscordMessage(webhookURL, "Zen Shop Closed.")
@@ -3107,6 +3542,46 @@ ZenPath:
 
     hotbarController(0, 1, "0")
     SendDiscordMessage(webhookURL, "**[Zen Shop Completed]**")
+
+Return
+
+DepositCorruptPath:
+
+    Tooltip, Depositing Corrupt to %AutoDepositCorrupt%
+    SetTimer, HideTooltip, -1500
+
+    SendDiscordMessage(webhookURL, "**[Corrupt Deposit Cycle]**")    
+
+    SafeClickRelative(0.65, 0.127)
+    sleepAmount(1000, 2000)
+    
+   if (AutoDepositCorrupt = "Kitsune") {
+        Send, {w down}
+        Sleep, 500
+        Send, {w up}
+        sleepAmount(100, 1000)
+        Send, {d down}
+        Sleep, 10000
+        Send, {d up}
+        sleepAmount(100, 1000)
+        Send, {s down}
+        Sleep, 1400
+        Send, {s up}
+        sleepAmount(100, 1000)
+        Loop, 5 {
+            searchItem("corrupt")
+            sleepAmount(100, 500)
+            Send, {E}
+            sleepamount(100, 1000)
+            SafeClickRelative(0.7644, 0.492)
+            sleepamount(100, 1000)
+        }
+
+    }
+
+    SafeClickRelative(0.5, 0.127)
+    Gosub, closeRobuxShopOdds
+    SendDiscordMessage(webhookURL, "**[Corrupt Deposit Completed]**")
 
 Return
 
