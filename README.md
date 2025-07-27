@@ -1,6 +1,6 @@
 # Scripter Grow A Garden Macro
 A macro for the Roblox game "Grow a Garden"
-Big thanks to Virage for making the original macro!
+
 
  ## Installation
  - First of all, you need to download [AutoHotKey v1.1](https://www.autohotkey.com/) (Not 2.0), and run the installer
@@ -21,3 +21,6 @@ Scripter Grow A Garden Macro has a couple of different features it is capable of
 - Automatic buying from all Shops (including merchants), with the options to check the items you want the macro to purchase
 - Discord Webhook integration
 - Fast mode/Slow mode
+- Event features
+
+Big thanks to Virage for making the original macro!
