@@ -333,12 +333,12 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             repeatKey(dir, sendCount)
         }
         else if (dir = "down") {
-            if ((currentArray.Name = "zenItems") && (previousIndex = 0 || previousIndex = 1 || previousIndex = 8 || previousIndex = 11)) {
+            if ((currentArray.Name = "zenItems") && (previousIndex = 0 || previousIndex = 1 || previousIndex = 7 || previousIndex = 11)) {
             }
             ; --- ZenItems skip logic ---
             if (currentArray.Name = "zenItems") {
                 ; Check if passing over index 6 or 9 and they're not selected
-                for skipIdx, skipVal in [1, 2, 8, 12] {
+                for skipIdx, skipVal in [0, 1, 7, 11] {
                     if (previousIndex < skipVal && index >= skipVal) {
                         found := false
                         for _, sel in selectedZenItems {
@@ -1868,7 +1868,7 @@ AutoBuyMerchant:
     ; queues if its not the first cycle and the time is a multiple of 30
     if (cycleCount > 0 && Mod(currentMinute, 30) = 0 && currentMinute != lastMerchantMinute) {
         lastMerchantMinute := currentMinute
-        SetTimer, PushBuyMerchant, 1000
+        SetTimer, PushBuyMerchant, -8000
     }
 
 Return
@@ -2577,6 +2577,8 @@ closeRobuxShopOdds:
     SafeClickRelative(0.67252, 0.24905)
     Sleep, 500
     SafeClickRelative(0.71074, 0.76893)
+    Sleep, 500
+    SafeClickRelative(0.60588, 0.28977)
     Sleep, 250
 
 Return
@@ -3458,7 +3460,7 @@ DepositTranquilPath:
         Send, {w up}
         sleepAmount(100, 1000)
         Send, {d down}
-        Sleep, 10000
+        Sleep, 9500
         Send, {d up}
         sleepAmount(100, 1000)
         Send, {s down}
