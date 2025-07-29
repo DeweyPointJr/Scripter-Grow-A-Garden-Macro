@@ -543,8 +543,6 @@ searchItem(search := "nil") {
             uiUniversal("4433055411550", 1, 1)
         }
 
-        uiUniversal(10)
-
 }
 
 typeString(string, enter := 1, clean := 1) {
@@ -2324,17 +2322,19 @@ SetTimers:
     honeyShopAutoActive := 1
     SetTimer, AutoBuyHoneyShop, 1000 ; checks every second if it should queue
 
+    if (AutoDepositCorrupt != "None") {
+        actionQueue.Push("DepositCorrupt")
+    }
+    corruptDepositAutoActive := 1
+    SetTimer, AutomaticDepositCorrupt, 1000 ; checks every second if it should queue
+    
     if (AutoDepositTranquil != "None") {
         actionQueue.Push("DepositTranquil")
     }
     tranquilDepositAutoActive := 1
     SetTimer, AutomaticDepositTranquil, 1000 ; checks every second if it should queue
 
-    if (AutoDepositCorrupt != "None") {
-        actionQueue.Push("DepositCorrupt")
-    }
-    corruptDepositAutoActive := 1
-    SetTimer, AutomaticDepositCorrupt, 1000 ; checks every second if it should queue
+    
 
     if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
         actionQueue.Push("BuyMerchant")
@@ -3558,26 +3558,26 @@ DepositCorruptPath:
     sleepAmount(1000, 2000)
     
    if (AutoDepositCorrupt = "Kitsune") {
-        Send, {w down}
-        Sleep, 500
-        Send, {w up}
-        sleepAmount(100, 1000)
-        Send, {d down}
-        Sleep, 10000
-        Send, {d up}
-        sleepAmount(100, 1000)
-        Send, {s down}
-        Sleep, 1400
-        Send, {s up}
-        sleepAmount(100, 1000)
-        Loop, 5 {
-            searchItem("corrupt")
-            sleepAmount(100, 500)
-            Send, {E}
-            sleepamount(100, 1000)
-            SafeClickRelative(0.7644, 0.492)
-            sleepamount(100, 1000)
-        }
+    Send, {w down}
+    Sleep, 500
+    Send, {w up}
+    sleepAmount(100, 1000)
+    Send, {d down}
+    Sleep, 9500
+    Send, {d up}
+    sleepAmount(100, 1000)
+    Send, {s down}
+    Sleep, 1400
+    Send, {s up}
+    sleepAmount(100, 1000)
+    Loop, 5 {
+        searchItem("corrupt")
+        sleepAmount(100, 500)
+        Send, {E}
+        sleepamount(100, 1000)
+        SafeClickRelative(0.7644, 0.492)
+        sleepamount(100, 1000)
+    }
 
     }
 
