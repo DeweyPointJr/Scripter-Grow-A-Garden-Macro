@@ -54,6 +54,9 @@ global collectTranquilAutoActive := 0
 global corruptDepositAutoActive := 0
 global collectCorruptAutoActive := 0
 
+global mapSide = ""
+IniRead, mapSide, %settingsFile%, Main, MapSide
+
 global GAME_PASS_ID  := 1244038348
 global VERIFIED_KEY  := "VerifiedUser"
 
@@ -515,7 +518,7 @@ searchItem(search := "nil") {
         Return
     }
 
-        SafeClickRelative(0.13533, 0.052)
+        SendInput, ``
         sleepAmount(100, 1000)
         SafeClickRelative(0.6095, 0.6439)
         Sleep, 50      
@@ -530,14 +533,14 @@ searchItem(search := "nil") {
             sleep, 250
             SafeClickRelative(0.346, 0.6818)
             sleep, 250
-            SafeClickRelative(0.13533, 0.052)
+            SendInput, ``
         }
         else if (search = "corrupt") {
             SafeClickRelative(0.3099, 0.767)
             sleep, 250
             SafeClickRelative(0.346, 0.6818)
             sleep, 250
-            SafeClickRelative(0.13533, 0.052)
+            SendInput, ``
         }
         else if (search = "radar") {
             uiUniversal("4433055411550", 1, 1)
@@ -1087,14 +1090,14 @@ ShowGui:
     Gui, Font, s9 cC1ADDB Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cC1ADDB, Zen Event
     IniRead, AutoCollectTranquil, %settingsFile%, Zen, AutoCollectTranquil, 0
-    Gui, Add, Checkbox, % "x50 y90 vAutoCollectTranquil cC1ADDB " . (AutoCollectTranquil ? "Checked" : ""), Auto-Collect Tranquil Plants
+    Gui, Add, Checkbox, % "x50 y90 vAutoCollectTranquil gAutoTranquilClicked cC1ADDB " . (AutoCollectTranquil ? "Checked" : ""), Auto-Collect Tranquil Plants
     Gui, Font, s8 cC1ADDB Bold, Segoe UI
     Gui, Add, Text, x250 y90, Auto-Deposit Tranquil:
     IniRead, AutoDepositTranquil, %settingsFile%, Zen, AutoDepositTranquil, None
     Gui, Add, DropDownList, vAutoDepositTranquil gUpdateTranquil x375 y90 w75, None|Tanuki|Tree|Kitsune
     GuiControl, ChooseString, AutoDepositTranquil, %AutoDepositTranquil%
     IniRead, AutoCollectCorrupt, %settingsFile%, Zen, AutoCollectCorrupt, 0
-    Gui, Add, Checkbox, % "x50 y115 vAutoCollectCorrupt cB0171A " . (AutoCollectCorrupt ? "Checked" : ""), Auto-Collect Corrupt Plants
+    Gui, Add, Checkbox, % "x50 y115 vAutoCollectCorrupt gAutoCorruptClicked cB0171A " . (AutoCollectCorrupt ? "Checked" : ""), Auto-Collect Corrupt Plants
     Gui, Font, s8 cB0171A Bold, Segoe UI
     Gui, Add, Text, x250 y115, Auto-Deposit Corrupt:
     IniRead, AutoDepositCorrupt, %settingsFile%, Zen, AutoDepositCorrupt, None
@@ -1934,6 +1937,54 @@ BuySummer:
 
 Return
 */
+
+AutoTranquilClicked:
+    Gui, Submit ; Submit the GUI (gets current state of controls)
+    if (AutoCollectTranquil) ; If the checkbox is checked
+    {
+        ; Create custom popup with two buttons (Left and Right)
+        Gosub, SaveSettings
+        Gui, Destroy
+        Gui, Add, Text, , Which side of the map are you on? (Seeds / Sell)
+        Gui, Add, Button, gLeftClicked, Seeds
+        Gui, Add, Button, gRightClicked, Sell
+        Gui, Show, , Custom Popup
+    } else {
+        Gosub, SaveSettings
+        Gosub, ShowGui
+    }
+Return
+
+AutoCorruptClicked:
+    Gui, Submit ; Submit the GUI (gets current state of controls)
+    if (AutoCollectCorrupt) ; If the checkbox is checked
+    {
+        ; Create custom popup with two buttons (Left and Right)
+        Gosub, SaveSettings
+        Gui, Destroy
+        Gui, Add, Text, , Which side of the map are you on? (Seeds / Sell)
+        Gui, Add, Button, gLeftClicked, Seeds
+        Gui, Add, Button, gRightClicked, Sell
+        Gui, Show, , Custom Popup
+    } else {
+        Gosub, SaveSettings
+        Gosub, ShowGui
+    }
+Return
+
+LeftClicked:
+    global mapSide := "Seeds"
+    IniWrite, % mapSide, %settingsFile%, Main, mapSide
+    Gui, Destroy
+    Gosub, ShowGui
+Return
+
+RightClicked:
+    global mapSide := "Sell"
+    IniWrite, % mapSide, %settingsFile%, Main, mapSide
+    Gui, Destroy
+    Gosub, ShowGui
+Return
 
 AutoBuyGear:
 
@@ -3031,21 +3082,25 @@ CosmeticShopPath:
 Return
 
 CollectTranquilPath:
+    Tooltip, %mapSide%
 
     SendDiscordMessage(webhookURL, "**[Tranquil Plant Collection Cycle]**")
-    Gosub, cameraChange
-    Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+    if (mapSide = "Sell") {
+        Gosub, cameraChange
+        Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+            SafeClickRelative(0.35, 0.127)
+            Sleep, 125
+            SafeClickRelative(0.65, 0.127)
+            Sleep, 125
+        }
         SafeClickRelative(0.35, 0.127)
-        Sleep, 125
-        SafeClickRelative(0.65, 0.127)
-        Sleep, 125
+        Sleep, 500
+        Gosub, cameraChange
+        Sleep, 500
+        SafeClickRelative(0.5, 0.127)
+        sleepAmount(1000, 2000)
     }
-    SafeClickRelative(0.35, 0.127)
-    Sleep, 500
-    Gosub, cameraChange
-    Sleep, 500
-    SafeClickRelative(0.5, 0.127)
-    sleepAmount(1000, 2000)
+    
 
     hotbarController(1, 0, "3")
 
@@ -3219,19 +3274,21 @@ Return
 CollectCorruptPath:
 
     SendDiscordMessage(webhookURL, "**[Corrupt Plant Collection Cycle]**")
-    Gosub, cameraChange
-    Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+    if (mapSide = "Sell") {
+        Gosub, cameraChange
+        Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+            SafeClickRelative(0.35, 0.127)
+            Sleep, 125
+            SafeClickRelative(0.65, 0.127)
+            Sleep, 125
+        }
         SafeClickRelative(0.35, 0.127)
-        Sleep, 125
-        SafeClickRelative(0.65, 0.127)
-        Sleep, 125
+        Sleep, 500
+        Gosub, cameraChange
+        Sleep, 500
+        SafeClickRelative(0.5, 0.127)
+        sleepAmount(1000, 2000)
     }
-    SafeClickRelative(0.35, 0.127)
-    Sleep, 500
-    Gosub, cameraChange
-    Sleep, 500
-    SafeClickRelative(0.5, 0.127)
-    sleepAmount(1000, 2000)
 
     hotbarController(1, 0, "4")
 
@@ -3730,6 +3787,7 @@ SaveSettings:
         if (A_Index > 10 && A_Index <= 14)
             IniWrite, % (HoneyItem%A_Index% ? 1 : 0), %settingsFile%, Honey, Item%A_Index%
     IniWrite, % AutoCollectTranquil, %settingsFile%, Zen, AutoCollectTranquil
+    IniWrite, % AutoCollectCorrupt, %settingsFile%, Zen, AutoCollectCorrupt
 
     ; — Main section —
     IniWrite, % AutoAlign,             %settingsFile%, Main, AutoAlign
