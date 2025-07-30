@@ -2762,13 +2762,13 @@ MerchantPath:
     sleepAmount(2500, 5000)
     ; checks for the shop opening up to 5 times to ensure it doesn't fail
   Loop, 5 {
-        if (simpleDetect(0xF7B211, 10, 0.54, 0.20, 0.65, 0.325)) {
+        if (simpleDetect(0xFFFB48, 10, 0.35, 0.43, 0.37, 0.45)) {
             ToolTip, Merchant Opened
             repeatKey("\", 2, 50) ; scroll up before detecting so it sees the first item
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Merchant Opened.")
             Sleep, 200
-            /*if (simpleDetect(0x, 10, 0.357, 0.285, 0.359, 0.287)) {
+            if (simpleDetect(0x, 10, 0.357, 0.285, 0.359, 0.287)) {
                 ToolTip, Spray Merchant Detected
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Spray Merchant Detected.")
@@ -2778,9 +2778,7 @@ MerchantPath:
                 buyUniversal("spray")
                 SendDiscordMessage(webhookURL, "Merchant Closed.")
                 merchantCompleted = 1
-             else
-            */
-            if (simpleDetect(0x896253, 10, 0.372, 0.436, 0.374, 0.438)) {
+            } else if (simpleDetect(0x896253, 10, 0.372, 0.436, 0.374, 0.438)) {
                 ToolTip, Sky Merchant Detected
                 SetTimer, HideTooltip, -1500
                 SendDiscordMessage(webhookURL, "Sky Merchant Detected.")
