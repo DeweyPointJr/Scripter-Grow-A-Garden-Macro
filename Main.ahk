@@ -3097,6 +3097,9 @@ CollectTranquilPath:
         Sleep, 500
         
     }
+
+    SafeClickRelative(0.5, 0.127)
+    sleepAmount(1000, 2000)
     
     SafeClickRelative(0.5, 0.127)
     sleepAmount(1000, 2000)
