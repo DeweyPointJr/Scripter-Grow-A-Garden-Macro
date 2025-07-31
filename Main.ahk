@@ -341,7 +341,7 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             ; --- ZenItems skip logic ---
             if (currentArray.Name = "zenItems") {
                 ; Check if passing over index 6 or 9 and they're not selected
-                for skipIdx, skipVal in [0, 1, 7, 11] {
+                for skipIdx, skipVal in [1, 2, 8, 12] {
                     if (previousIndex < skipVal && index >= skipVal) {
                         found := false
                         for _, sel in selectedZenItems {
@@ -3095,10 +3095,11 @@ CollectTranquilPath:
         Sleep, 500
         Gosub, cameraChange
         Sleep, 500
-        SafeClickRelative(0.5, 0.127)
-        sleepAmount(1000, 2000)
+        
     }
     
+    SafeClickRelative(0.5, 0.127)
+    sleepAmount(1000, 2000)
 
     hotbarController(1, 0, "3")
 
@@ -3287,6 +3288,9 @@ CollectCorruptPath:
         SafeClickRelative(0.5, 0.127)
         sleepAmount(1000, 2000)
     }
+
+    SafeClickRelative(0.5, 0.127)
+    sleepAmount(1000, 2000)
 
     hotbarController(1, 0, "4")
 
