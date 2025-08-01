@@ -54,6 +54,8 @@ global collectTranquilAutoActive := 0
 global corruptDepositAutoActive := 0
 global collectCorruptAutoActive := 0
 
+global NavigationMode
+
 global mapSide = ""
 IniRead, mapSide, %settingsFile%, Main, MapSide
 
@@ -339,7 +341,7 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             if ((currentArray.Name = "zenItems") && (previousIndex = 0 || previousIndex = 1 || previousIndex = 7 || previousIndex = 11)) {
             }
             ; --- ZenItems skip logic ---
-            if (currentArray.Name = "zenItems") {
+            if (currentArray.Name = "zenItems" and NavigationMode = "Settings") {
                 ; Check if passing over index 6 or 9 and they're not selected
                 for skipIdx, skipVal in [1, 2, 8, 12] {
                     if (previousIndex < skipVal && index >= skipVal) {
@@ -356,20 +358,27 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
                     }
                 }
             }
-            if (curentArray.Name = "eggItems") {
+            if (curentArray.Name = "eggItems" and NavigationMode = "Settings") {
                 sendCount ++
             }
 
             repeatKey(dir, sendCount)
             repeatKey("Enter")
             repeatKey(dir)
-            if ((currentArray.Name = "zenItems") && (index = 1 || index = 2 || index = 8 || index = 12)) {
+            if (currentArray.Name = "seedItems" or currentArray.Name = "gearItems") {
+                if (NavigationMode = "Hotbar") {
+                    if !(currentArray.Name = "gearItems" && index = 2) {
+                        Send, {Left}
+                    }
+                }
+            }
+            if ((currentArray.Name = "zenItems" and NavigationMode = "Settings") && (index = 1 || index = 2 || index = 8 || index = 12)) {
                 repeatKey(dir)
             }
-            if ((currentArray.Name = "honeyMerchantItems") && (index = 1 || index = 3 || index = 4 || index = 5)) {
+            if ((currentArray.Name = "honeyMerchantItems" and NavigationMode = "Settings") && (index = 1 || index = 3 || index = 4 || index = 5)) {
                 repeatKey(dir)
             }
-            if (currentArray.Name = "eggItems") {
+            if (currentArray.Name = "eggItems" and NavigationMode = "Settings") {
                 repeatKey(dir)
             }
         }
@@ -2666,8 +2675,7 @@ EggShopPath:
             if (NavigationMode == "Settings") {
                 uiUniversal("33311443333114405550555", 0)
             } else if (NavigationMode == "Hotbar") {
-                repeatKey("up", 50)
-                uiUniversal("332233311443333114405550555", 0)
+                uiUniversal("3333333333333333333333333333333333333333333231114", 0)
             }
             Sleep, 100
             buyUniversal("egg")
@@ -2720,9 +2728,10 @@ SeedShopPath:
             if (NavigationMode == "Settings") {
                 uiUniversal("33311443333114405550555", 0)
             } else if (NavigationMode == "Hotbar") {
-                repeatKey("up", 50)
-                uiUniversal("332233311443333114405550555", 0)
+
+                uiUniversal("33333333333333333333333333333333333333333333333333222221114", 0, 0)
             }
+
             Sleep, 100
             buyUniversal("seed")
             SendDiscordMessage(webhookURL, "Seed Shop Closed.")
@@ -2998,8 +3007,7 @@ GearShopPath:
             if (NavigationMode == "Settings") {
                 uiUniversal("33311443333114405550555", 0)
             } else if (NavigationMode == "Hotbar") {
-                repeatKey("up", 50)
-                uiUniversal("332233311443333114405550555", 0)
+                uiUniversal("33333333333333333333333333333333333333333333333333333222221114", 0, 0)
             }
             Sleep, 100
             buyUniversal("gear")
@@ -3583,11 +3591,11 @@ ZenPath:
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Zen Shop Opened.")
             Sleep, 200
-            if (NavigationMode == "Settings") {
+            if (NavigationMode = "Settings") {
                 uiUniversal("33331144433333114405550555", 0)
-            } else if (NavigatonMode == "Hotbar") {
-                repeatKey("up", 50)
-                uiUniversal("332233331144433333114405550555", 0)
+            } else if (NavigatonMode = "Hotbar") {
+                Send, {\}
+                uiUniversal("33333333333333333333333333333333333333333333333231114", 0, 0)
             }
             
             Sleep, 100
