@@ -49,14 +49,16 @@ global merchantAutoActive := 0
 global eggAutoActive  := 0
 global cosmeticAutoActive := 0
 global honeyShopAutoActive := 0
-global tranquilDepositAutoActive := 0
-global collectTranquilAutoActive := 0
-global corruptDepositAutoActive := 0
-global collectCorruptAutoActive := 0
-
-global NavigationMode
+global craftingSeedAutoActive := 0
+global craftingAutoActive := 0
+global collectPlantsAutoActive := 0
 
 global mapSide = ""
+global NavigationMode
+
+global selectedCookingItem
+global SelectedCookingRarity
+
 IniRead, mapSide, %settingsFile%, Main, MapSide
 
 global GAME_PASS_ID  := 1244038348
@@ -81,6 +83,62 @@ global gearScroll_1080p, toolScroll_1440p_100, toolScroll_1440p_125
 gearScroll_1080p     := [1, 2, 4, 6, 8, 9, 11, 13]
 gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
+
+CheckForUpdate() { 
+    currentVersion := "Cooking1.0" ; <-- Set your current version here 
+    latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
+    whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
+    whr.Open("GET", latestURL, false) 
+    whr.Send() 
+    whr.WaitForResponse() 
+    status := whr.Status + 0 
+    if (status != 200) { 
+        MsgBox, Failed to fetch release info. Status: %status% return 
+    } 
+    json := whr.ResponseText 
+    RegExMatch(json, """tag_name"":\s*""([^""]+)""", m) 
+    latestVersion := m1
+    if (latestVersion = "") {
+        MsgBox, Could not find latest version in response.
+        return
+    }
+
+    if (latestVersion != currentVersion) {
+        MsgBox, 4, Update Available, New version %latestVersion% found! Download and install?
+        IfMsgBox, Yes
+        {
+            RegExMatch(json, """zipball_url"":\s*""([^""]+)""", d)
+            downloadURL := d1
+            if (downloadURL = "") {
+                MsgBox, Could not find zipball_url in release JSON.
+                return
+            }
+            whr2 := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+            whr2.Open("GET", downloadURL, false)
+            whr2.Send()
+            whr2.WaitForResponse()
+            status2 := whr2.Status + 0
+            if (status2 != 200) {
+                MsgBox, Failed to download update file. Status: %status2%
+                return
+            }
+            stream := ComObjCreate("ADODB.Stream")
+            stream.Type := 1 ; binary
+            stream.Open()
+            stream.Write(whr2.ResponseBody)
+            stream.SaveToFile(A_ScriptDir "\update.zip", 2)
+            stream.Close()
+            ; Extract the update
+            RunWait, %ComSpec% /c powershell -Command "Expand-Archive -Force '%A_ScriptDir%\update.zip' '%A_ScriptDir%'",, Hide
+            ; Run updater and exit
+            Run, %A_ScriptDir%\update.ahk
+            ExitApp
+        }
+    }
+}
+
+CheckForUpdate()
+
 
 ; http functions
 
@@ -367,7 +425,7 @@ uiUniversal(order := 0, exitUi := 1, continuous := 0, spam := 0, spamCount := 30
             repeatKey(dir)
             if (currentArray.Name = "seedItems" or currentArray.Name = "gearItems") {
                 if (NavigationMode = "Hotbar") {
-                    if !(currentArray.Name = "gearItems" && index = 2) {
+                    if !(currentArray.Name = "gearItems" && index = 3) {
                         Send, {Left}
                     }
                 }
@@ -521,7 +579,7 @@ findIndex(array := "", value := "", returnValue := "int") {
 
 }
 
-searchItem(search := "nil") {
+searchItem(search := "nil", crafting := 0, type := "None") {
 
     if(search = "nil") {
         Return
@@ -529,10 +587,17 @@ searchItem(search := "nil") {
 
         SendInput, ``
         sleepAmount(100, 1000)
+        SafeClickRelative(0.655991736, 0.63446969697)
+        sleepAmount(100, 1000)
         SafeClickRelative(0.6095, 0.6439)
-        Sleep, 50      
-        typeString(search)
         Sleep, 50
+        SendInput, {Ctrl down}{A}{Right}{Ctrl up}  
+        if !(search = "food")  { 
+            typeString(search)
+        }
+        Sleep, 50
+
+        
 
         if (search = "recall") {
             uiUniversal("22211550554155055", 1, 1)
@@ -554,6 +619,45 @@ searchItem(search := "nil") {
         else if (search = "radar") {
             uiUniversal("4433055411550", 1, 1)
         }
+        else if (search = "food") {
+            SafeClickRelative(0.3125, 0.890151515)
+            sleep, 500
+            SafeClickRelative(0.346, 0.6818)
+            sleep, 500
+            SafeClickRelative(0.5, 0.5)
+        }
+
+        if (type = "fruit") {
+            SafeClickRelative(0.31353, 0.73863)
+            sleep, 500
+        }
+
+        if (crafting = 1) {
+            SafeClickRelative(0.346, 0.6818)
+            sleep, 250
+            Send, {E}
+            sleep, 250
+            SafeClickRelative(0.346, 0.6818)
+            sleep, 250
+            if (search = "Common Egg") {
+                SafeClickRelative(0.380681818182, 0.6818)
+                sleep, 250
+                Send, {E}
+                sleep, 250
+                SafeClickRelative(0.380681818182, 0.6818)
+                sleep, 250
+            }
+            SendInput, ``
+            sleep, 250
+        }
+        if (crafting = 2) {
+            SafeClickRelative(0.346, 0.6818)
+            sleep, 750
+            Send, {e}
+            sleep, 750
+            SafeClickRelative(0.5, 0.5)
+            sleep, 750
+        }
 
 }
 
@@ -570,7 +674,11 @@ typeString(string, enter := 1, clean := 1) {
 
     Loop, Parse, string
     {
-        Send, {%A_LoopField%}
+        if (A_LoopField = " ") {
+            Send, {Space}
+        } else {
+            Send, {%A_LoopField%}
+        }
         Sleep, 100
     }
 
@@ -884,8 +992,8 @@ seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Orange Tulip"
              , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed", "Ember Lily"
 	     , "Sugar Apple", "Burning Bud", "Giant Pinecone Seed", "Elder Strawberry Seed"]
 
-gearItems := ["Watering Can", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat"
-             , "Godly Sprinkler", "Magnifying Glass", "Tanning Mirror", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot"
+gearItems := ["Watering Can", "Trading Ticket", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat"
+             , "Godly Sprinkler", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Grandmaster Sprinkler"
              , "Levelup Lollipop"]
 
 eggItems := ["Common Egg", "Common Summer Egg", "Rare Summer Egg", "Mythical Egg", "Paradise Egg"
@@ -906,21 +1014,69 @@ summerSeedMerchantItems := ["Cauliflower", "Rafflesia", "Green Apple", "Avocado"
 zenItems := ["Zen Seed Pack", "Zen Egg", "Hot Spring", "Zen Sand", "Tranquil Radar", "Corrupt Radar", "Zenflare", "Zen Crate", "Sakura Bush", "Soft Sunshine"
             , "Koi", "Zen Gnome Crate", "Spiked Mango", "Pet Shard Tranquil", "Pet Shard Corrupt", "Raiju"]
 
+craftingSeedItems := Object()
+cratingSeedItems["Twisted Tangle"] := Object("ingredients", Array("Cactus Seed", "Bamboo Seed", "Cactus", "Mango"))
+craftingSeedItems["Veinpetal"] := Object("ingredients", Array("Orange Tulip Seed", "Daffodil Seed", "Beanstalk", "Burning Bud"))
+craftingSeedItems["Horsetail"] := Object("ingredients", Array("Stonebite Seed", "Bamboo", "Corn"), "time", 15)
+craftingSeedItems["Lingonberry"] := Object("ingredients", Array("Blueberry Seed", "Blueberry Seed", "Blueberry Seed", "Horsetail"), "time", 15)
+craftingSeedItems["Amber Spine"] := Object("ingredients", Array("Cactus", "Pumpkin", "Horsetail"), "time", 30)
+
+craftingSeedOrder := ["Twisted Tangle", "Veinpetal", "Horsetail", "Lingonberry", "Amber Spine"]
+
+craftingItems := Object()
+craftingItems["Lightning Rod"] := Object("ingredients", Array("Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler"), "time", 45)
+craftingItems["Tanning Mirror"] := Object("ingredients", Array("Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler"))
+craftingItems["Reclaimer"] := Object("ingredients", Array("Common Egg", "Harvest Tool"), "time", 25)
+craftingItems["Tropical Mist Sprinkler"] := Object("ingredients", Array("Coconut", "Dragon Fruit", "Mango", "Godly Sprinkler"), "time", 60)
+craftingItems["Berry Blusher Sprinkler"] := Object("ingredients", Array("Grape", "Blueberry", "Strawberry", "Godly Sprinkler"), "time", 60)
+craftingItems["Spice Spritzer Sprinkler"] := Object("ingredients", Array("Pepper", "Ember Lily", "Cacao", "Master Sprinkler"), "time", 60)
+craftingItems["Sweet Soaker Sprinkler"] := Object("ingredients", Array("Watermelon", "Watermelon", "Watermelon", "Master Sprinkler"), "time", 60)
+craftingItems["Flower Froster Sprinkler"] := Object("ingredients", Array("Orange Tulip", "Daffodil", "Advanced Sprinkler", "Basic Sprinkler"), "time", 60)
+craftingItems["Stalk Sprout Sprinkler"] := Object("ingredients", Array("Bamboo", "Beanstalk", "Mushroom", "Advanced Sprinkler"), "time", 60)
+craftingItems["Mutation Spray Choc"] := Object("ingredients", Array("Cleaning Spray", "Cacao"), "time", 12)
+craftingItems["Mutation Spray Chilled"] := Object("ingredients", Array("Cleaning Spray", "Godly Sprinkler"), "time", 5)
+craftingItems["Mutation Spray Shocked"] := Object("ingredients", Array("Cleaning Spray", "Lightning Rod"), "time", 30)
+craftingItems["Anti Bee Egg"] := Object("ingredients", Array("Bee Egg"), "time", 120)
+craftingItems["Small Toy"] := Object("ingredients", Array("Common Egg", "Coconut Seed", "Coconut"), "time", 10)
+craftingItems["Small Treat"] := Object("ingredients", Array("Common Egg", "Dragon Fruit Seed", "Blueberry"), "time", 10)
+craftingItems["Pack Bee"] := Object("ingredients", Array("Anti Bee Egg", "Sunflower", "Purple Dahlia"), "time", 240)
+
+craftingItemOrder := ["Lightning Rod", "Tanning Mirror", "Reclaimer", "Tropical Mist Sprinkler", "Berry Blusher Sprinkler", "Spice Spritzer Sprinkler", "Sweet Soaker Sprinkler"
+                     , "Flower Froster Sprinkler", "Stalk Sprout Sprinkler", "Mutation Spray Choc", "Mutation Spray Chilled", "Anti Bee Egg", "Small Toy", "Small Treat", "Pack Bee"]
+
+cookingItems := Object()
+cookingItemRarities := Object()
+cookingItemOrder:= ["Hotdog", "Pie", "Burger", "Salad", "Waffle", "Sandwich", "Ice Cream", "Donut", "Pizza", "Sushi", "Cake"]
+
+cookingItems["Hotdog"] := Object("Common", Array("Corn", "Corn", "Watermelon"), "Legendary", Array("Pepper", "Corn"), "Prismatic", Array("Corn", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Hotdog"] := Array("Common", "Legendary", "Prismatic")
+cookingItems["Pie"] := Object("Common", Array("Pumpkin", "Apple"), "Prismatic", "Legendary", Array("Pumpkin", "Giant Pinecone", "Corn", "Apple"), "Mythical", Array("Apple", "Pumpkin"), "Divine", Array("Coconut", "Beanstalk") Array("Pumpkin", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Pie"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Burger"] := Object("Legendary", Array("Pepper", "Corn", "Tomato"), "Mythical", Array("Pepper", "Corn", "Tomato", "Beanstalk", "Beanstalk"), "Prismatic", Array("Corn", "Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Burger"] := Array("Legendary", "Mythical", "Prismatic")
+cookingItems["Salad"] := Object("Common", Array("Tomato", "Tomato"), "Rare", Array("Tomato", "Tomato", "Tomato", "Tomato", "Tomato"), "Mythical", Array("Tomato", "Giant Pinecone"), "Divine", Array("Sugar Apple", "Sugar Apple", "Sugar Apple", "Pepper", "Pineapple"), "Prismatic", Array("Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Salad"] := Object("Common", "Rare", "Mythical", "Divine", "Prismatic")
+cookingItems["Waffle"] := Object("Common", Array("Pumpkin", "Watermelon"), "Legendary", Array("Coconut", "Apple", "Dragon Fruit", "Mango"), "Mythical", Array("Coconut", "Pineapple") "Divine", Array("Sugar Apple", "Coconut"), "Prismatic", Array("Sugar Apple", "Coconut", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Waffle"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Sandwich"] := Object("Common", Array("Tomato", "Tomato", "Corn"), "Legendary", Array("Tomato", "Corn", "Cacao"), "Mythical", Array("Tomato", "Corn", "Elder Strawberry"))
+cookingItemRarities["Sandwich"] := Array("Common", "Legendary", "Mythical")
+cookingItems["Ice Cream"] := Object("Uncommon", Array("Blueberry", "Corn"), "Legendary", Array("Banana", "Banana"), "Mythical", Array("Sugar Apple", "Banana"), "Divine", Array("Sugar Apple", "Sugarglaze"), "Prismatic", Array("Banana", "Sugar Apple", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Ice Cream"] := Array("Uncommon", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Donut"] := Object("Common", Array("Strawberry", "Tomato", "Apple"), "Rare", Array("Corn", "Blueberry", "Apple"), "Mythical", Array("Sugar Apple", "Sugar Apple", "Corn"), "Divine", Array("Bone Blossom", "Sugar Apple", "Banana"), "Prismatic", Array("Bone Blossom", "Bone Blossom", "Bone Blossom", "Sugar Apple", "Banana"))
+cookingItemRarities["Donut"] := Array("Common", "Rare", "Mythical", "Divine", "Prismatic")
+cookingItems["Pizza"] := Object("Common", Array("Banana", "Tomato"), "Legendary", Array("Tomato", "Banana", "Corn", "Corn") "Mythical", Array("Pepper", "Tomato", "Corn", "Sugar Apple", "Sugar Apple"), "Divine", Array("Sugar Apple", "Sugar Apple", "Sugar Apple", "Pepper", "Banana"), "Prismatic", Array("Corn", "Sugar Apple", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Pizza"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Sushi"] := Object("Common", Array("Bamboo", "Bamboo", "Bamboo", "Bamboo", "Corn"), "Legendary", Array("Cactus", "Cactus", "Bamboo", "Corn"), "Mythical", Array("Bamboo", "Bamboo", "Corn", "Bone Blossom", "Bone Blossom") "Divine", Array("Bamboo", "Corn", "Bone Blossom", "Bone Blossom", "Bone Blossom"), "Prismatic", Array("Coconut", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Sushi"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Cake"] := Object("Uncommon", Array("Corn", "Corn", "Strawberry", "Strawberry"), "Rare", Array("Corn", "Corn", "Watermelon", "Watermelon"), "Legendary", Array("Kiwi", "Kiwi", "Corn", "Corn"), "Mythical", Array("Sugar Apple", "Sugar Apple", "Corn", "Corn"), "Divine", Array("Banana", "Sugar Apple", "Sugar Apple", "Sugar Apple", "Sugar Apple"), "Prismatic", Array("Banana", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Cake"] := Array("Uncommon", "Rare", "Legendary", "Mythical", "Divine", "Prismatic")
+
+
 ; honeyItems := ["Flower Seed Pack", "placeHolder1", "Lavender Seed", "Nectarshade Seed", "Nectarine Seed", "Hive Fruit Seed", "Pollen Rader", "Nectar Staff"
 ;             , "Honey Sprinkler", "Bee Egg", "placeHolder2", "Bee Crate", "placeHolder3", "Honey Comb", "Bee Chair", "Honey Torch", "Honey Walkway"]
 
 ;realHoneyItems := ["Flower Seed Pack", "Lavender Seed", "Nectarshade Seed", "Nectarine Seed", "Hive Fruit Seed", "Pollen Rader", "Nectar Staff"
 ;            , "Honey Sprinkler", "Bee Egg", "Bee Crate", "Honey Comb", "Bee Chair", "Honey Torch", "Honey Walkway"]
-
-global craftItems, craftItems2
-craftItems := ["Crafters Seed Pack", "Manuka Flower", "Dandelion"
-    , "Lumira", "Honeysuckle", "Bee Balm", "Nectar Thorn", "Suncoil"]
-craftItems2 := ["Tropical Mist Sprinkler", "Berry Blusher Sprinkler"
-    , "Spice Spritzer Sprinkler", "Sweet Soaker Sprinkler"
-    , "Flower Freeze Sprinkler", "Stalk Sprout Sprinkler"
-    , "Mutation Spray Choc", "Mutation Spray Pollinated"
-    , "Mutation Spray Shocked", "Honey Crafters Crate"
-    , "Anti Bee Egg", "Pack Bee"]
 
 settingsFile := A_ScriptDir "\settings.ini"
 
@@ -976,7 +1132,7 @@ ShowGui:
     Gui, Margin, 10, 10
     Gui, Color, 0x202020
     Gui, Font, s9 cWhite, Segoe UI
-    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Sprays|Sky|Honey|Summer|Zen|Settings|Credits
+    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Merchants|Crafting|Cooking|Settings|Credits
 
     Gui, Tab, 1
     Gui, Font, s9 c90EE90 Bold, Segoe UI
@@ -1038,102 +1194,132 @@ ShowGui:
 
     Gui, Tab, 4
     Gui, Font, s9 c616161 Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 c616161, Spray Merchant
+    Gui, Add, GroupBox, x23 y50 w238 h113 c616161, Spray Merchant
     IniRead, SelectAllSprayMerchantItems, %settingsFile%, SprayMerchant, SelectAllSprayMerchantItems, 0
-    Gui, Add, Checkbox, % "x50 y90 vSelectAllSprayMerchantItems gHandleSelectAll c616161 " . (SelectAllSprayMerchantItems ? "Checked" : ""), Select All Spray Merchant Items
+    Gui, Add, Checkbox, % "x50 y70 vSelectAllSprayMerchantItems gHandleSelectAll c616161 " . (SelectAllSprayMerchantItems ? "Checked" : ""), Select All Sprays
     Loop, % sprayMerchantItems.Length() {
         IniRead, eVal, %settingsFile%, SprayMerchant, Item%A_Index%, 0
-        y := 125 + (A_Index - 1) * 25
+        y := 95 + (A_Index - 1) * 25
         Gui, Add, Checkbox, % "x50 y" y " vSprayMerchantItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % sprayMerchantItems[A_Index]
     }
-    
-    Gui, Tab, 5
     Gui, Font, s9 c33B1FB Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 c33B1FB, Sky Merchant
+    Gui, Add, GroupBox, x23 y163 w238 h113 c33B1FB, Sky Merchant
     IniRead, SelectAllSkyMerchantItems, %settingsFile%, SkyMerchant, SelectAllSkyMerchantItems, 0
-    Gui, Add, Checkbox, % "x50 y90 vSelectAllSkyMerchantItems gHandleSelectAll c33B1FB " . (SelectAllSkyMerchantItems ? "Checked" : ""), Select All Sky Merchant Items
+    Gui, Add, Checkbox, % "x50 y183 vSelectAllSkyMerchantItems gHandleSelectAll c33B1FB " . (SelectAllSkyMerchantItems ? "Checked" : ""), Select All Sky Merchant Items
     Loop, % skyMerchantItems.Length() {
         IniRead, eVal, %settingsFile%, SkyMerchant, Item%A_Index%, 0
-        y := 125 + (A_Index - 1) * 25
+        y := 208 + (A_Index - 1) * 25
         Gui, Add, Checkbox, % "x50 y" y " vSkyMerchantItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % skyMerchantItems[A_Index]
     }
-
-    Gui, Tab, 6
     Gui, Font, s9 ce87b07 Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 ce87b07, Honey Merchant
+    Gui, Add, GroupBox, x23 y276 w238 h170 ce87b07, Honey Merchant
     IniRead, SelectAllHoneyMerchantItems, %settingsFile%, HoneyMerchant, SelectAllHoneyMerchantItems, 0
-    Gui, Add, Checkbox, % "x50 y90 vSelectAllHoneyMerchantItems gHandleSelectAll ce87b07 " . (SelectAllHoneyMerchantItems ? "Checked" : ""), Select All Honey Merchant Items
+    Gui, Add, Checkbox, % "x50 y296 vSelectAllHoneyMerchantItems gHandleSelectAll ce87b07 " . (SelectAllHoneyMerchantItems ? "Checked" : ""), Select All Honey Merchant Items
     Loop, % honeyMerchantItems.Length() {
         IniRead, eVal, %settingsFile%, HoneyMerchant, Item%A_Index%, 0
-        y := 125 + (A_Index - 1) * 25
+        y := 321 + (A_Index - 1) * 25
         Gui, Add, Checkbox, % "x50 y" y " vHoneyMerchantItem" A_Index " gHandleSelectAll cD3D3D3 " . (eVal ? "Checked" : ""), % honeyMerchantItems[A_Index]
     }
-
-    Gui, Tab, 7
     Gui, Font, s9 c90EE90 Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 c90EE90, Summer Merchant
+    Gui, Add, GroupBox, x261 y50 w238 h396 c90EE90, Summer Merchant
     IniRead, SelectAllSummerSeeds, %settingsFile%, SummerMerchant, SelectAllSummerSeeds, 0
-    Gui, Add, Checkbox, % "x50 y90 vSelectAllSummerSeeds gHandleSelectAll c90EE90 " . (SelectAllSummerSeeds ? "Checked" : ""), Select All Summer Seeds
+    Gui, Add, Checkbox, % "x288 y70 vSelectAllSummerSeeds gHandleSelectAll c90EE90 " . (SelectAllSummerSeeds ? "Checked" : ""), Select All Summer Seeds
     Loop, % summerSeedMerchantItems.Length() {
         IniRead, sVal, %settingsFile%, SummerMerchant, Item%A_Index%, 0
-        if (A_Index > 18) {
-            col := 350
-            idx := A_Index - 18
-            yBase := 125
-        }
-        else if (A_Index > 9) {
-            col := 200
-            idx := A_Index - 10
-            yBase := 125
+        if false {
+
         }
         else {
-            col := 50
+            col := 288
             idx := A_Index
-            yBase := 100
+            yBase := 80
         }
         y := yBase + (idx * 25)
         Gui, Add, Checkbox, % "x" col " y" y " vSummerSeedItem" A_Index " gHandleSelectAll cD3D3D3 " . (sVal ? "Checked" : ""), % summerSeedMerchantItems[A_Index]
     }
 
-    Gui, Tab, 8
-    Gui, Font, s9 cC1ADDB Bold, Segoe UI
-    Gui, Add, GroupBox, x23 y50 w475 h340 cC1ADDB, Zen Event
-    IniRead, AutoCollectTranquil, %settingsFile%, Zen, AutoCollectTranquil, 0
-    Gui, Add, Checkbox, % "x50 y90 vAutoCollectTranquil gAutoTranquilClicked cC1ADDB " . (AutoCollectTranquil ? "Checked" : ""), Auto-Collect Tranquil Plants
-    Gui, Font, s8 cC1ADDB Bold, Segoe UI
-    Gui, Add, Text, x250 y90, Auto-Deposit Tranquil:
-    IniRead, AutoDepositTranquil, %settingsFile%, Zen, AutoDepositTranquil, None
-    Gui, Add, DropDownList, vAutoDepositTranquil gUpdateTranquil x375 y90 w75, None|Tanuki|Tree|Kitsune
-    GuiControl, ChooseString, AutoDepositTranquil, %AutoDepositTranquil%
-    IniRead, AutoCollectCorrupt, %settingsFile%, Zen, AutoCollectCorrupt, 0
-    Gui, Add, Checkbox, % "x50 y115 vAutoCollectCorrupt gAutoCorruptClicked cB0171A " . (AutoCollectCorrupt ? "Checked" : ""), Auto-Collect Corrupt Plants
-    Gui, Font, s8 cB0171A Bold, Segoe UI
-    Gui, Add, Text, x250 y115, Auto-Deposit Corrupt:
-    IniRead, AutoDepositCorrupt, %settingsFile%, Zen, AutoDepositCorrupt, None
-    Gui, Add, DropDownList, vAutoDepositCorrupt gUpdateCorrupt x375 y115 w75, None|Kitsune
-    GuiControl, ChooseString, AutoDepositCorrupt,  %AutoDepositCorrupt%
-    IniRead, SelectAllZen, %settingsFile%, Zen, SelectAllZen, 0
-    Gui, Add, Checkbox, % "x50 y140 vSelectAllZen gHandleSelectAll cC1ADDB " . (SelectAllZen ? "Checked" : ""), Select All Zen Items
-    Loop, % zenItems.Length() {
-        IniRead, sVal, %settingsFile%, Zen, Item%A_Index%, 0
-        if (A_Index > 18) {
-            col := 350
-            idx := A_Index - 18
-            yBase := 170
+    Gui, Tab, 5
+    Gui, Font, s9 cCC6CE7 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w238 h180 cCC6CE7, Seed Crafting
+    IniRead, CraftingSeedNone, %settingsFile%, SeedCrafting, CraftingSeedNone, 1
+    Options := "x50 y80 vCraftingSeedNone cD3D3D3"
+    if (CraftingSeedNone)
+        Options .= " Checked"
+
+    Gui, Add, Radio, %Options%, None
+
+    idx := 0
+    for k, itemName in craftingSeedOrder {
+        idx++
+        IniRead, sVal, %settingsFile%, SeedCrafting, Item%idx%, 0
+        col := 50
+        yBase := 80
+        y := yBase + (idx * 25)
+        Gui, Add, Radio, % "x" col " y" y " vCraftingSeedItem" idx " cD3D3D3 " . (sVal ? "Checked" : ""), % itemName
+    }
+    Gui, Font, s9 cCC6CE7 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y230 w238 h210 cCC6CE7, Item Crafting
+    Gui, Add, GroupBox, x261 y50 w238 h340 cCC6CE7, Item Crafting Continued
+    IniRead, CraftingItemNone, %settingsFile%, ItemCrafting, CraftingItemNone, 1
+    Options := "x50 y260 vCraftingItemNone cD3D3D3"
+    if (CraftingSeedNone)
+        Options .= " Checked"
+
+    Gui, Add, Radio, %Options%, None
+
+    trueidx := 0
+    for k, itemName in craftingItemOrder {
+        trueidx++
+        IniRead, sVal, %settingsFile%, ItemCrafting, Item%trueidx%, 0
+        if (trueidx <= 6) {
+            col := 50
+            yBase := 260
+            row := trueidx
+        } else {
+            col := 288
+            yBase := 60
+            row := trueidx - 6
         }
-        else if (A_Index > 9) {
+        y := yBase + (row * 25)
+        opt := "x" col " y" y " vCraftingItem" trueidx " cD3D3D3"
+        if (sVal)
+            opt .= " Checked"
+        Gui, Add, Radio, %opt%, %itemName%
+    }
+
+    Gui, Tab, 6
+    Gui, Font, s9 cE27466 Bold, Segoe UI
+    Gui, Add, GroupBox, x23 y50 w475 h340 cE27466, Cooking
+    IniRead, AutoCollectPlants, %settingsFile%, Cooking, AutoCollectPlants, 0
+    Gui, Add, Checkbox, % "x50 y90 vAutoCollectPlants gAutoPlantsClicked cE27466 " . (AutoCollectPlants ? "Checked" : ""), Auto Collect Plants
+    IniRead, CookingItemNone, %settingsFile%, Cooking, CookingItemNone, 1
+    Options := "x50 y125 vCookingItemNone cE27466"
+    if (CookingItemNone)
+        Options .= " Checked"
+
+    Gui, Add, Radio, %Options%, None
+
+    trueidx := 0
+    for k, itemName in cookingItemOrder {
+        IniRead, gVal, %settingsFile%, Cooking, Item%A_Index%, 0
+        if (A_Index > 9) {
             col := 200
             idx := A_Index - 10
-            yBase := 170
+            yBase := 125
         }
         else {
             col := 50
             idx := A_Index
-            yBase := 145
+            yBase := 125
         }
         y := yBase + (idx * 25)
-        Gui, Add, Checkbox, % "x" col " y" y " vZenItem" A_Index " gHandleSelectAll cD3D3D3 " . (sVal ? "Checked" : ""), % zenItems[A_Index]
+        Gui, Add, Radio, % "x" col " y" y " vCookingItem" A_Index " gCookingItemClicked cD3D3D3 " . (gVal ? "Checked" : ""), % cookingItemOrder[A_Index]
     }
+    Gui, Add, Text, x288 y125, Rarity:
+    IniRead, SelectedCookingRarity, %settingsFile%, Cooking, SelectedCookingRarity
+    Gui, Add, DropDownList, x335 y125 w90 vSelectedCookingRarity, |
+    Gosub, CookingItemClicked
+
 
     
 
@@ -1187,7 +1373,7 @@ ShowGui:
     ; Gui, Add, Radio, x50 y280 gUpdateResolution c708090 %opt3%, 1920x1080 100`%
     ; Gui, Add, Radio, x50 y300 gUpdateResolution c708090 %opt4%, 1280x720 100`%
 
-    Gui, Tab, 9
+    Gui, Tab, 7
     Gui, Font, s9, cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Settings
 
@@ -1258,7 +1444,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Button, x50 y335 w150 h40 gStartScanMultiInstance Background202020, Start Macro (F5)
     Gui, Add, Button, x320 y335 w150 h40 gQuit Background202020, Stop Macro (F7)
 
-    Gui, Tab, 10
+    Gui, Tab, 8
     Gui, Font, s9 cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Credits
 
@@ -1296,7 +1482,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     ; Gui, Add, Button, x50 y270 w100 h25 gDonate vDonate2500 BackgroundF0F0F0, 2500 Robux
     ; Gui, Add, Button, x50 y330 w100 h25 gDonate vDonate10000 BackgroundF0F0F0, 10000 Robux
     
-    Gui, Show, w520 h460, Scripter GAG Macro [CORRUPTED]
+    Gui, Show, w520 h460, Scripter GAG Macro [COOKING]
 
 Return
 
@@ -1663,6 +1849,53 @@ UpdateSelectedItems:
             selectedZenItems.Push(zenItems[A_Index])
     } 
 
+
+    selectedCraftingSeedItem := ""
+    selectedCraftingSeedIndex := 0
+    selectedCraftingSeedFound := 0
+    
+    Loop, % craftingSeedOrder.Length() {
+        if (CraftingSeedItem%A_Index%) {
+            selectedCraftingSeedItem := craftingSeedOrder[A_Index]
+            selectedCraftingSeedIndex := A_Index
+            selectedCraftingSeedFound := 1
+        }
+    }
+    if (selectedCraftingSeedFound = 0) {
+        selectedCraftingSeedItem := "None"
+    }
+
+    selectedCraftingItem := ""
+    selectedCraftingIndex := 0
+    selectedCraftingFound := 0
+    
+    Loop, % craftingItemOrder.Length() {
+        if (CraftingItem%A_Index%) {
+            selectedCraftingItem := craftingItemOrder[A_Index]
+            selectedCraftingIndex := A_Index
+            selectedCraftingFound := 1
+        }
+    }
+    if (selectedCraftingFound = 0) {
+        selectedCraftingItem := "None"
+    }
+
+    selectedCookingItem := ""
+    selectedCookingIndex := 0
+    selectedCookingFound := 0
+    
+    Loop, % cookingItemOrder.Length() {
+        if (CookingItem%A_Index%) {
+            selectedCookingItem := cookingItemOrder[A_Index]
+            selectedCookingIndex := A_Index
+            selectedCookingFound := 1
+        }
+    }
+    if (selectedCookingFound = 0) {
+        selectedCookingItem := "None"
+    }
+
+
 Return
 
 GetSelectedItems() {
@@ -1713,6 +1946,18 @@ GetSelectedItems() {
         for _, name in selectedZenItems
             result .= "  - " name "`n"
     }
+    if (selectedCraftingSeedItem != "None") {
+        result .= "Crafting Seed Item:`n"
+        result .= "  - " selectedCraftingSeedItem "`n"
+    }
+    if (selectedCraftingItem != "None") {
+        result .= "Crafting Item:`n"
+        result .= "  - " selectedCraftingItem "`n"
+    }
+    if (selectedCookingItem != "None") {
+        result .= "Cooking Item:`n"
+        result.= "  - " selectedCookingItem "`n"
+    }
 
     return result
     
@@ -1732,11 +1977,11 @@ StartScanMultiInstance:
     global lastEggShopMinute := -1
     global lastCosmeticShopHour := -1
     global lastHoneyShopMinute := -1
+    global lastCraftingSeedMinute := -1
+    global lastCraftingMinute := -1
+    global lastCookingMinute := -1
     ; global lastHoneyShopHour := -1
-    global lastDepositTranquilMinute := -1
-    global lastCollectTranquilHour := -1
-    global lastDepositCorruptMinute := -1
-    global lastCollectCorruptHour := -1
+    global lastCollectPlantsMinute := -1
     global lastMerchantMinute := -1
     global lastHoneyMerchantMinute := -1
     global lastSummerMinute := -1
@@ -1803,45 +2048,46 @@ StartScanMultiInstance:
     Gosub, SetTimers
 
     while (started) {
-        if (actionQueue.Length()) {
-            global cycleFinished := 0
-            SetTimer, AutoReconnect, Off
-            ToolTip  
-            next := actionQueue.RemoveAt(1)
-            if (MultiInstanceMode) {
-                for window in windowIDS {
-                    currentWindow := % windowIDS[window]
-                    instanceNumber := window
-                    ToolTip, % "Running Cycle On Instance " . window
-                    SetTimer, HideTooltip, -1500
-                    SendDiscordMessage(webhookURL, "***Instance " . instanceNumber . "***")
-                    WinActivate, % "ahk_id " . currentWindow
-                    Sleep, 200
-                    SafeClickRelative(midX, midY)
-                    Sleep, 200
-                    Gosub, % next
-                }
-            }
-            else {
-                WinActivate, % "ahk_id " . firstWindow
+    if (actionQueue.Length()) {
+        global cycleFinished := 0
+        SetTimer, AutoReconnect, Off
+        SetTimer, SetToolTip, Off   ; <-- Stop tooltip updates while busy
+        ToolTip  
+        next := actionQueue.RemoveAt(1)
+        if (MultiInstanceMode) {
+            for window in windowIDS {
+                currentWindow := % windowIDS[window]
+                instanceNumber := window
+                ToolTip, % "Running Cycle On Instance " . window
+                SetTimer, HideTooltip, -1500
+                SendDiscordMessage(webhookURL, "***Instance " . instanceNumber . "***")
+                WinActivate, % "ahk_id " . currentWindow
+                Sleep, 200
+                SafeClickRelative(midX, midY)
+                Sleep, 200
                 Gosub, % next
             }
-            if (!actionQueue.MaxIndex()) {
-                global cycleFinished := 1
-            }
-            Sleep, 500
-        } else {
-                Gosub, SetToolTip
-                WinActivate, % "ahk_id " . firstWindow
-                cycleCount++
-                SendDiscordMessage(webhookURL, "[**CYCLE " . cycleCount . " COMPLETED**]")
-                cycleFinished := 0
-                if (!MultiInstanceMode) {
-                    SetTimer, AutoReconnect, 30000
-                }
-            Sleep, 1000
         }
+        else {
+            WinActivate, % "ahk_id " . firstWindow
+            Gosub, % next
+        }
+        if (!actionQueue.MaxIndex()) {
+            global cycleFinished := 1
+        }
+        Sleep, 500
+    } else {
+        SetTimer, SetToolTip, 1000   ; <-- Start tooltip updates while idle
+        WinActivate, % "ahk_id " . firstWindow
+        cycleCount++
+        SendDiscordMessage(webhookURL, "[**CYCLE " . cycleCount . " COMPLETED**]")
+        cycleFinished := 1
+        if (!MultiInstanceMode) {
+            SetTimer, AutoReconnect, 30000
+        }
+        Sleep, 1000
     }
+}
 
 Return
 
@@ -1868,6 +2114,74 @@ BuySeed:
     currentSection := "BuySeed"
     if (selectedSeedItems.Length())
         Gosub, SeedShopPath
+
+Return
+
+AutoCraftSeed:
+
+    ; queues if its not the first cycle and the time is a multiple of 10
+    if (cycleCount > 0 && Mod(currentMinute, 10) = 0 && currentMinute != lastCraftingSeedMinute) {
+        lastCraftingSeedMinute := currentMinute
+        SetTimer, PushCraftSeed, -8000
+    }
+
+Return
+
+PushCraftSeed:
+
+    actionQueue.Push("CraftSeed")
+
+Return
+
+CraftSeed:
+
+    currentSection := "CraftSeed"
+    if (selectedCraftingSeedItem != "None") {
+        Gosub, CraftSeedPath
+    }
+
+Return
+
+AutoCooking:
+    if (cycleCount > 0 && Mod(currentMinute, 5) = 0 && curentMinute != lastCookingMinute) {
+        lastCookingMinute := currentMinute
+        SetTimer, PushCooking, -8000
+    }
+Return
+
+PushCooking:
+    actionQueue.Push("Cooking")
+Return
+
+Cooking:
+    currentSection := "Cooking"
+    if (selectedCookingItem != "None") {
+        Gosub, CookingPath
+    }
+Return
+
+AutoCraft:
+
+    ; queues if its not the first cycle and the time is a multiple of 10
+    if (cycleCount > 0 && Mod(currentMinute, 10) = 0 && currentMinute != lastCraftingMinute) {
+        lastCraftingSeedMinute := currentMinute
+        SetTimer, PushCraft, -8000
+    }
+
+Return
+
+PushCraft:
+
+    actionQueue.Push("Craft")
+
+Return
+
+Craft:
+
+    currentSection := "Craft"
+    if (selectedCraftingItem != "None") {
+        Gosub, CraftPath
+    }
 
 Return
 
@@ -1947,9 +2261,9 @@ BuySummer:
 Return
 */
 
-AutoTranquilClicked:
-    Gui, Submit ; Submit the GUI (gets current state of controls)
-    if (AutoCollectTranquil) ; If the checkbox is checked
+AutoPlantsClicked:
+    Gui, Submit, NoHide ; Submit the GUI (gets current state of controls)
+    if (AutoCollectPlants) ; If the checkbox is checked
     {
         ; Create custom popup with two buttons (Left and Right)
         Gosub, SaveSettings
@@ -1957,15 +2271,39 @@ AutoTranquilClicked:
         Gui, Add, Text, , Which side of the map are you on? (Seeds / Sell)
         Gui, Add, Button, gLeftClicked, Seeds
         Gui, Add, Button, gRightClicked, Sell
-        Gui, Show, , Custom Popup
+        Gui, Show, , Scripter GAG Macro [COOKING]
     } else {
         Gosub, SaveSettings
-        Gosub, ShowGui
     }
 Return
 
+CookingItemClicked:
+    Gosub, SaveSettings
+    options := ""
+
+    ; Assume you have a numeric range to check CookingItem1 through CookingItemN
+    Loop, % cookingItemOrder.Length() {
+        idx := A_Index
+        if (CookingItem%idx%) {
+            selectedCookingItem := cookingItemOrder[idx]
+            for each, rarity in cookingItemRarities[selectedCookingItem] {
+                options .= rarity . "|"
+            }
+        }
+    }
+
+    GuiControl,, SelectedCookingRarity, |
+    GuiControl,, SelectedCookingRarity, %options%
+Return
+
+RarityClicked:
+    Gosub, SaveSettings
+    Gui, Destroy
+    Gosub, ShowGui
+Return
+
 AutoCorruptClicked:
-    Gui, Submit ; Submit the GUI (gets current state of controls)
+    Gui, Submit, NoHide ; Submit the GUI (gets current state of controls)
     if (AutoCollectCorrupt) ; If the checkbox is checked
     {
         ; Create custom popup with two buttons (Left and Right)
@@ -1985,6 +2323,7 @@ LeftClicked:
     global mapSide := "Seeds"
     IniWrite, % mapSide, %settingsFile%, Main, mapSide
     Gui, Destroy
+    MsgBox, 0, Disclaimer, This will not always collect all your plants!! The macro will only be able to collect plants with the perimeter of the garden. If there are plants you don't want to be collected, please favorite them!
     Gosub, ShowGui
 Return
 
@@ -1992,6 +2331,7 @@ RightClicked:
     global mapSide := "Sell"
     IniWrite, % mapSide, %settingsFile%, Main, mapSide
     Gui, Destroy
+    MsgBox, 0, Disclaimer, This will not always collect all your plants!! The macro will only be able to collect plants with the perimeter of the garden. If there are plants you don't want to be collected, please favorite them!
     Gosub, ShowGui
 Return
 
@@ -2018,6 +2358,29 @@ BuyGear:
         Gosub, GearShopPath
 
 Return
+
+AutomaticCollectPlants:
+
+    ; queues if its not the first cycle and the time is a multiple of 5
+    if (cycleCount > 0 && Mod(currentMinute, 5) = 0 && currentMinute != lastCollectPlantsMinute) {
+        lastCollectPlantsMinute := currentMinute
+        SetTimer, PushCollectPlants, -8000
+    }
+
+Return
+
+PushCollectPlants:
+
+    actionQueue.Push("CollectPlants")
+
+Return
+
+CollectPlants:
+
+    currentSection := "CollectPlants"
+    if (AutoCollectPlants) {
+        Gosub, CollectPlantsPath
+    }
 
 AutoBuyEggShop:
 
@@ -2066,56 +2429,6 @@ BuyCosmeticShop:
     if (BuyAllCosmetics) {
         Gosub, CosmeticShopPath
     } 
-
-Return
-
-AutoCollectTranquil:
-
-     ; queues if its not the first cycle, the minute is 0, and the current hour isn't the same as the last hour it was run
-    if (cycleCount > 0 && currentMinute = 0 && currentHour != lastCollectTranquilHour) {
-        lastCollectTranquilHour := currentHour
-        SetTimer, PushCollectTranquil, -600000
-    }
-
-Return
-
-AutoCollectCorrupt:
-
-     ; queues if its not the first cycle, the minute is 0, and the current hour isn't the same as the last hour it was run
-    if (cycleCount > 0 && currentMinute = 0 && currentHour != lastCollectCorruptHour) {
-        lastCollectCorruptHour := currentHour
-        SetTimer, PushCollectCorrupt, -600000
-    }
-
-Return
-
-PushCollectTranquil:
-
-    actionQueue.Push("CollectTranquil")
-
-Return
-
-PushCollectCorrupt:
-
-    actionQueue.Push("CollectCorrupt")
-
-Return
-
-CollectTranquil:
-
-    currentSection := "CollectTranquil"
-    if (AutoCollectTranquil) {
-        Gosub, CollectTranquilPath
-    }
-
-Return
-
-CollectCorrupt:
-
-    currentSection := "CollectCorrupt"
-    if (AutoCollectCorrupt) {
-        Gosub, CollectCorruptPath
-    }
 
 Return
 
@@ -2237,6 +2550,18 @@ SetToolTip:
         depositCorruptMin := rem5sec // 60
         depositCorruptSec := Mod(rem5sec, 60)
         depositCorruptText := (depositCorruptSec < 10) ? depositCorruptMin . ":0" . depositCorruptSec : depositCorruptMin . ":" . depositCorruptSec
+        collectPlantsMin := rem5sec // 60
+        collectPlantsSec := Mod(rem5sec, 60)
+        collectPlantsText := (collectPlantsSec < 10) ? collectPlantsMin . ":0" . collectPlantsSec : collectPlantsMin . ":" . collectPlantsSec
+
+        craftingSeedMin := rem5sec // 60
+        craftingSeedSec := Mod(rem5sec, 60)
+        craftingSeedText := (craftingSeedSec < 10) ? craftingSeedMin . ":0" . craftingSeedSec : craftingSeedMin . ":" . craftingSeedSec
+        craftingText := craftingSeedText
+
+        cookingMin := rem5sec // 60
+        cookingSec := Mod(rem5sec, 60)
+        cookingText := (cookingSec < 10) ? cookingMin . ":0" . cookingSec : cookingMin . ":" . cookingSec
 
         mod30 := Mod(currentMinute, 30)
         rem30min := (mod30 = 0) ? 30 : 30 - mod30
@@ -2281,13 +2606,6 @@ SetToolTip:
         } else {
             remHoneySec := 3600 - (currentMinute * 60 + currentSecond)
         }
-        collectTranquilMin := remHoneySec // 60
-        collectTranquilSec := Mod(remHoneySec, 60)
-        collectTranquilText := (collectTranquilSec < 10) ? collectTranquilMin . ":0" . collectTranquilSec : collectTranquilMin . ":" . collectTranquilSec
-
-        collectCorruptMin := remHoneySec // 60
-        collectCorruptSec := Mod(remHoneySec, 60)
-        collectCorruptText := (collectCorruptSec < 10) ? collectCorruptMin . ":0" . collectCorruptSec : collectCorruptMin . ":" . collectCorruptSec
 
         tooltipText := ""
         if (selectedSeedItems.Length()) {
@@ -2302,17 +2620,11 @@ SetToolTip:
         if (BuyAllCosmetics) {
             tooltipText .= "Cosmetic Shop: " . cosText . "`n"
         }
-        if (AutoDepositTranquil != "None") {
-            tooltipText .= "Deposit Tranquil: " . depositTranquilText . "`n"
-        }
-        if (AutoDepositCorrupt != "None") {
-            tooltipText .= "Deposit Corrupt: " . depositCorruptText . "`n"
-        }
         if (selectedHoneyItems.Length()) {
             tooltipText .= "Honey Shop: " . honeyText . "`n"
         }
-        if (AutoCollectTranquil) {
-            tooltipText .= "Collect Tranquil: " . collectTranquilText . "`n"
+        if (AutoCollectPlants) {
+            tooltipText .= "Collect Plants: " . collectPlantsText . "`n"
         }
         if (selectedSprayItems.Length() or selectedSkyItems.Length() or selectedHoneyMerchantItems.Length() or selectedSummerItems.Length()) {
             tooltipText .= "Merchant: " . merchantText . "`n"
@@ -2320,6 +2632,12 @@ SetToolTip:
         }
         if (selectedZenItems.Length()) {
             tooltipText .= "Zen Shop: " . zenText . "`n"
+        }
+        if (selectedCraftingSeedItem != "None" or selectedCraftingItem != "None") {
+            tooltipText .= "Crafting: " . craftingSeedText . "`n"
+        }
+        if (selectedCookingItem != "None") {
+            tooltipText .= "Cooking: " . cookingText . "`n"
         }
 
         if (tooltipText != "") {
@@ -2364,35 +2682,35 @@ SetTimers:
     cosmeticAutoActive := 1
     SetTimer, AutoBuyCosmeticShop, 1000 ; checks every second if it should queue
 
-    if (AutoCollectTranquil) {
-        actionQueue.Push("CollectTranquil")
-    }
-    collectTranquilAutoActive := 1
-    SetTimer, AutoCollectTranquil, 1000 ; checks every second if it should queue
-
-    if (AutoCollectCorrupt) {
-        actionQueue.Push("CollectCorrupt")
-    }
-    collectCorruptAutoActive := 1
-    SetTimer, AutoCollectCorrupt, 1000 ; checks every second if it should queue
-
     if (selectedHoneyItems.Length()) {
         actionQueue.Push("BuyHoneyShop")
     }
     honeyShopAutoActive := 1
     SetTimer, AutoBuyHoneyShop, 1000 ; checks every second if it should queue
 
-    if (AutoDepositCorrupt != "None") {
-        actionQueue.Push("DepositCorrupt")
+    if (selectedCraftingSeedItem != "None") {
+        actionQueue.Push("CraftSeed")
     }
-    corruptDepositAutoActive := 1
-    SetTimer, AutomaticDepositCorrupt, 1000 ; checks every second if it should queue
-    
-    if (AutoDepositTranquil != "None") {
-        actionQueue.Push("DepositTranquil")
+    craftingSeedAutoActive := 1
+    SetTimer, AutoCraftSeed, 1000
+
+    if (selectedCraftingItem != "None") {
+        actionQueue.Push("Craft")
     }
-    tranquilDepositAutoActive := 1
-    SetTimer, AutomaticDepositTranquil, 1000 ; checks every second if it should queue
+    craftingAutoActive := 1
+    SetTimer, AutoCraft, 1000
+
+    if (cookingItem != "None") {
+        actionQueue.Push("Cooking")
+    }
+    cookingAutoActive := 1
+    SetTimer, AutoCooking, 1000
+
+    if (AutoCollectPlants) {
+        actionQueue.Push("CollectPlants")
+    }
+    collectPlantsAutoActive := 1
+    SetTimer, AutomaticCollectPlants, 1000
 
     
 
@@ -2640,6 +2958,8 @@ closeRobuxShopOdds:
     Sleep, 500
     SafeClickRelative(0.60588, 0.28977)
     Sleep, 250
+    SafeClickRelative(0.96797, 0.29356)
+    Sleep, 250
 
 Return
 
@@ -2728,10 +3048,8 @@ SeedShopPath:
             if (NavigationMode == "Settings") {
                 uiUniversal("33311443333114405550555", 0)
             } else if (NavigationMode == "Hotbar") {
-
                 uiUniversal("33333333333333333333333333333333333333333333333333222221114", 0, 0)
             }
-
             Sleep, 100
             buyUniversal("seed")
             SendDiscordMessage(webhookURL, "Seed Shop Closed.")
@@ -2744,6 +3062,7 @@ SeedShopPath:
     }
 
     closeShop("seed", seedsCompleted)
+    closeRobuxPrompt()
     Gosub, closeRobuxShopOdds
 
     Sleep, 200
@@ -2753,6 +3072,194 @@ SeedShopPath:
     SendDiscordMessage(webhookURL, "**[Seeds Completed]**")
 
 Return
+
+CraftSeedPath:
+
+    seedCraftCompleted := 0
+
+    Tooltip, Crafting %selectedCraftingSeedItem%
+    SetTimer, HideTooltip, -1500
+
+    hotbarController(1, 0, "2")
+    sleepamount(100, 1000)
+    SafeClickRelative(0.5, 0.5)
+    sleepamount(100, 1000)
+
+    Send, {s down}
+    sleep, 850
+    Send, {s up}
+    sleepAmount(100, 1000)
+
+    SendDiscordMessage(webhookURL, "**[Seed Crafting Cycle]**")
+
+    Send, {c}
+    sleep, 250
+    repeatKey("e", 2)
+    sleepAmount(100, 1000)
+    closeRobuxPrompt()
+    sleepAmount(100, 1000)
+
+    if (simpleDetect(0xA2014D, 10, 0.54, 0.2, 0.65, 0.325)) {
+        Tooltip, Seed Crafting Opened
+        SetTimer, HideTooltip, -1500
+        SendDiscordMessage(webhookURL, "Seed Crafting Opened")
+        Sleep, 200
+        if (NavigationMode = "Settings") {
+            uiUniversal("33311443333114405550555", 0)
+        } else if (NavigationMode = "Hotbar") {
+            uiUniversal("3333333333333333333333333333333333322222111405550553", 0)
+            sleep, 300
+            Tooltip, %selectedCraftingSeedIndex%
+            repeatKey("down", selectedCraftingSeedIndex)
+            sleep, 300
+            Send, {Enter}
+            sleep, 100
+            Send, {down}
+            sleep, 100
+            Send, {Enter}{\}
+            sleepAmount(100, 1000)
+            
+        }
+        Tooltip, Adding Ingredients
+        SetTimer, HideTooltip, -1500
+        ingredients := craftingSeedItems[selectedCraftingSeedItem]["ingredients"]
+        for index, ingredient in ingredients {
+            searchItem(ingredient, 1)
+            Sleep, 200
+        }
+        Send, E
+        sleepAmount(100, 1000)
+    }
+
+    closeRobuxPrompt()
+    Gosub, closeRobuxShopOdds
+    SafeClickRelative(0.5, 0.127)
+
+Return
+
+CraftPath:
+    CraftCompleted := 0
+
+    Tooltip, Crafting %selectedCraftingItem%
+    SetTimer, HideTooltip, -1500
+
+    hotbarController(1, 0, "2")
+    sleepamount(100, 1000)
+    SafeClickRelative(0.5, 0.5)
+    sleepamount(100, 1000)
+
+    Send, {s down}
+    sleep, 1250
+    Send, {s up}
+    sleepAmount(100, 1000)
+
+    SendDiscordMessage(webhookURL, "**[Crafting Cycle]**")
+
+    Send, {c}
+    sleep, 250
+    repeatKey("e", 2)
+    sleepAmount(100, 1000)
+    closeRobuxPrompt()
+    sleepAmount(100, 1000)
+
+    if (simpleDetect(0xA2014D, 10, 0.54, 0.2, 0.65, 0.325)) {
+        Tooltip, Crafting Opened
+        SetTimer, HideTooltip, -1500
+        SendDiscordMessage(webhookURL, "Crafting Opened")
+        Sleep, 200
+        if (NavigationMode = "Settings") {
+            uiUniversal("33311443333114405550555", 0)
+        } else if (NavigationMode = "Hotbar") {
+            uiUniversal("3333333333333333333333333333333333322222111405550553", 0)
+            sleep, 300
+            Tooltip, %selectedCraftingIndex%
+            repeatKey("down", selectedCraftingIndex)
+            sleep, 300
+            Send, {Enter}
+            sleep, 100
+            Send, {down}
+            sleep, 100
+            Send, {Enter}{\}
+            sleepAmount(100, 1000)
+            
+        }
+        Tooltip, Adding Ingredients
+        SetTimer, HideTooltip, -1500
+        ingredients := craftingItems[selectedCraftingItem]["ingredients"]
+        for index, ingredient in ingredients {
+            searchItem(ingredient, 1)
+            Sleep, 200
+        }
+        Send, E
+        sleepAmount(100, 1000)
+    }
+
+    closeRobuxPrompt()
+    Gosub, closeRobuxShopOdds
+    SafeClickRelative(0.5, 0.127)
+Return
+
+CookingPath:
+    ToolTip, Cooking %selectedCookingRarity% %selectedCookingItem%
+    SetTimer, HideTooltip, -1500
+    
+    cookingCompleted := 0
+
+    Gosub, cameraChange
+    Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
+        SafeClickRelative(0.35, 0.127)
+        Sleep, 125
+        SafeClickRelative(0.65, 0.127)
+        Sleep, 125
+    }
+    SafeClickRelative(0.35, 0.127)
+    Sleep, 500
+    Gosub, cameraChange
+    Sleep, 500
+
+    SafeClickRelative(0.66, 0.127)
+    sleepAmount(100, 1000)
+    SafeClickRelative(0.5, 0.5)
+    sleepAmount(100, 500)
+    Send, {a down}
+    Sleep, 9650
+    Send, {a up}
+    sleep, 500
+    Send, {w down}
+    sleep, 550
+    Send, {w up}
+
+    repeatKey("e", 2)
+    sleepAmount(100,1000)
+
+    ingredients := cookingItems[selectedCookingItem][selectedCookingRarity]
+    for index, ingredient in ingredients {
+        searchItem(ingredient, 2, "fruit")
+        sleep, 200
+        sleepAmount(100,1000)
+    }
+    closeRobuxPrompt()
+    SafeClickRelative(0.573347107, 0.411931818)
+    sleep, 500
+    SafeClickRelative(0.5, 0.5)
+    sleep, 500
+
+    Send, {d down}
+    sleep, 800
+    Send, {d up}
+
+    Send, {e}
+    sleep, 500
+    searchItem("food")
+    sleep, 500
+    SafeClickRelative(0.8, 0.625)
+    sleep, 500
+
+    SafeClickRelative(0.5, 0.127)
+
+
+Return
+
 
 MerchantPath:
 
@@ -2848,6 +3355,7 @@ MerchantPath:
     }
 
     SafeClickRelative(0.66838, 0.25284)
+    closeRobuxPrompt()
     Gosub, closeRobuxShopOdds
 
     Sleep, 400
@@ -3007,7 +3515,7 @@ GearShopPath:
             if (NavigationMode == "Settings") {
                 uiUniversal("33311443333114405550555", 0)
             } else if (NavigationMode == "Hotbar") {
-                uiUniversal("33333333333333333333333333333333333333333333333333333222221114", 0, 0)
+                 uiUniversal("33333333333333333333333333333333333333333333333333333222221114", 0, 0)
             }
             Sleep, 100
             buyUniversal("gear")
@@ -3021,6 +3529,7 @@ GearShopPath:
     }
 
     closeShop("gear", gearsCompleted)
+    closeRobuxPrompt()
     Gosub, closeRobuxShopOdds
 
     hotbarController(0, 1, "0")
@@ -3087,10 +3596,9 @@ CosmeticShopPath:
 
 Return
 
-CollectTranquilPath:
-    Tooltip, %mapSide%
+CollectPlantsPath:
 
-    SendDiscordMessage(webhookURL, "**[Tranquil Plant Collection Cycle]**")
+    SendDiscordMessage(webhookURL, "**[Plant Collection Cycle]**")
     if (mapSide = "Sell") {
         Gosub, cameraChange
         Loop, % ((SavedSpeed = "Ultra") ? 12 : (SavedSpeed = "Max") ? 18 : 8) {
@@ -3108,11 +3616,11 @@ CollectTranquilPath:
 
     SafeClickRelative(0.5, 0.127)
     sleepAmount(1000, 2000)
-    
-    SafeClickRelative(0.5, 0.127)
-    sleepAmount(1000, 2000)
+    Send, {o down}
+    Sleep, 5000
+    Send, {o up}
+    sleepAmount(100, 1000)
 
-    hotbarController(1, 0, "3")
 
     ; left side
     SendDiscordMessage(webhookURL, "**[Collecting Left Side...]**")
@@ -3124,14 +3632,17 @@ CollectTranquilPath:
     Sleep, 900
     Send, {a up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
+    SafeClickRelative(0.64824, 0.21306)
     Send, {a down}
     Sleep, 800
     Send, {a up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {a down}
     Sleep, 600
     Send, {a up}
@@ -3141,20 +3652,23 @@ CollectTranquilPath:
     Sleep, 1000
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1200
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1300
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1000
     Send, {s up}
@@ -3164,14 +3678,16 @@ CollectTranquilPath:
     Sleep, 900
     Send, {d up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {d down}
     Sleep, 800
     Send, {d up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {d down}
     Sleep, 600
     Send, {d up}
@@ -3189,14 +3705,16 @@ CollectTranquilPath:
     Sleep, 800
     Send, {d up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {d down}
     Sleep, 800
     Send, {d up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {d down}
     Sleep, 600
     Send, {d up}
@@ -3206,20 +3724,23 @@ CollectTranquilPath:
     Sleep, 1000
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1200
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1300
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1000
     Send, {s up}
@@ -3229,14 +3750,16 @@ CollectTranquilPath:
     Sleep, 900
     Send, {a up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {a down}
     Sleep, 800
     Send, {a up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {a down}
     Sleep, 600
     Send, {a up}
@@ -3250,31 +3773,35 @@ CollectTranquilPath:
     Sleep, 1000
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1200
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1300
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
     Send, {s down}
     Sleep, 1000
     Send, {s up}
     sleepAmount(200, 500)
-    SafeClickRelative(midX, midY)
+    Send, {e down}
     sleepAmount(8000, 10000)
+    Send, {e up}
 
     hotbarController(0, 1, "0")
     SafeClickRelative(0.5, 0.127)
 
-    SendDiscordMessage(webhookURL, "**[Tranquil Plant Collection Completed]**")
+    SendDiscordMessage(webhookURL, "**[Plant Collection Completed]**")
 
     Sleep, 500
     Gosub, alignment
@@ -3591,10 +4118,9 @@ ZenPath:
             SetTimer, HideTooltip, -1500
             SendDiscordMessage(webhookURL, "Zen Shop Opened.")
             Sleep, 200
-            if (NavigationMode = "Settings") {
+            if (NavigationMode == "Settings") {
                 uiUniversal("33331144433333114405550555", 0)
-            } else if (NavigatonMode = "Hotbar") {
-                Send, {\}
+            } else if (NavigatonMode == "Hotbar") {
                 uiUniversal("33333333333333333333333333333333333333333333333231114", 0, 0)
             }
             
@@ -3779,6 +4305,11 @@ SaveSettings:
         IniWrite, % (HoneyMerchantItem%A_Index%   ? 1 : 0), %settingsFile%, HoneyMerchant, Item%A_Index%
     IniWrite, % SelectAllHoneyMerchantItems,        %settingsFile%, HoneyMerchant, SelectAllHoneyMerchantItems
 
+    ; - Spray Merchant section -
+    Loop, % sprayMerchantItems.Length()
+        IniWrite, % (SprayMerchantItem%A_Index%   ? 1 : 0), %settingsFile%, SprayMerchant, Item%A_Index%
+    IniWrite, % SelectAllSprayMerchantItems,        %settingsFile%, SprayMerchant, SelectAllSprayMerchantItems
+
     ; — Summer section —
     Loop, % summerSeedMerchantItems.Length()
         IniWrite, % (SummerSeedItem%A_Index%   ? 1 : 0), %settingsFile%, SummerMerchant, Item%A_Index%
@@ -3788,6 +4319,15 @@ SaveSettings:
     Loop, % zenItems.Length()
         IniWrite, % (ZenItem%A_Index%   ? 1 : 0), %settingsFile%, Zen, Item%A_Index%
     IniWrite, % SelectAllZen,        %settingsFile%, Zen, SelectAllZen
+
+    ; - Crafting Section - 
+    Loop, % craftingSeedOrder.Length()
+        IniWrite, % (CraftingSeedItem%A_Index%  ? 1 : 0), %settingsFile%, SeedCrafting, Item%A_Index%
+    IniWrite, % CraftingSeedNone,        %settingsFile%, SeedCrafting, CraftingSeedNone
+
+    Loop, % craftingItemOrder.Length()
+        IniWrite, % (CraftingItem%A_Index%  ? 1 : 0), %settingsFile%, ItemCrafting, Item%A_Index%
+    IniWrite, % CraftingItemNone,        %settingsFile%, ItemCrafting, CraftingItemNone
 
     ; — Honey section —
     ; first the “place” items 1–10
@@ -3815,21 +4355,12 @@ SaveSettings:
     ; — Cosmetic section —
     IniWrite, % BuyAllCosmetics,       %settingsFile%, Cosmetic, BuyAllCosmetics
 
-    ; — CraftSeed section —
-    IniWrite, % SelectAllCraft,        %settingsFile%, CraftSeed, SelectAllCraftSeed
-
-    ; — CraftTool section —
-    IniWrite, % SelectAllCraft2,       %settingsFile%, CraftTool, SelectAllCraftTool
-
-    ; — Craft (seeds) section —
-    Loop, % craftItems.Length()
-        IniWrite, % (CraftItem%A_Index% ? 1 : 0), %settingsFile%, Craft, Item%A_Index%
-    IniWrite, % SelectAllCraft,        %settingsFile%, Craft, SelectAllCraft
-
-    ; — Craft2 (tools) section —
-    Loop, % craftItems2.Length()
-        IniWrite, % (CraftItem2%A_Index%?1:0), %settingsFile%, Craft2, Item%A_Index%
-    IniWrite, % SelectAllCraft2,       %settingsFile%, Craft2, SelectAllCraft2
+    ; - Cooking section -
+    IniWrite, % AutoCollectPlants,      %settingsFile%, Cooking, AutoCollectPlants
+    IniWrite, % CookingItemNone,       %settingsFile%, Cooking, CookingItemNone
+    Loop, % cookingItemOrder.Length()
+        IniWrite, % (CookingItem%A_Index%  ? 1 : 0), %settingsFile%, Cooking, Item%A_Index%
+    IniWrite, % CookingItemRarity,      %settingsFile%, Cooking, CookingItemRarity
 
 Return
 
