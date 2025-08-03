@@ -59,6 +59,9 @@ global NavigationMode
 global selectedCookingItem
 global SelectedCookingRarity
 
+global SavedSpeed
+global AutoAlign
+
 IniRead, mapSide, %settingsFile%, Main, MapSide
 
 global GAME_PASS_ID  := 1244038348
@@ -85,7 +88,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 CheckForUpdate() { 
-    currentVersion := "Cooking1.0" ; <-- Set your current version here 
+    currentVersion := "Cooking1.01" ; <-- Set your current version here 
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
     whr.Open("GET", latestURL, false) 
@@ -1055,7 +1058,7 @@ cookingItemRarities["Pie"] := Array("Common", "Legendary", "Mythical", "Divine",
 cookingItems["Burger"] := Object("Legendary", Array("Pepper", "Corn", "Tomato"), "Mythical", Array("Pepper", "Corn", "Tomato", "Beanstalk", "Beanstalk"), "Prismatic", Array("Corn", "Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
 cookingItemRarities["Burger"] := Array("Legendary", "Mythical", "Prismatic")
 cookingItems["Salad"] := Object("Common", Array("Tomato", "Tomato"), "Rare", Array("Tomato", "Tomato", "Tomato", "Tomato", "Tomato"), "Mythical", Array("Tomato", "Giant Pinecone"), "Divine", Array("Sugar Apple", "Sugar Apple", "Sugar Apple", "Pepper", "Pineapple"), "Prismatic", Array("Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
-cookingItemRarities["Salad"] := Object("Common", "Rare", "Mythical", "Divine", "Prismatic")
+cookingItemRarities["Salad"] := Array("Common", "Rare", "Mythical", "Divine", "Prismatic")
 cookingItems["Waffle"] := Object("Common", Array("Pumpkin", "Watermelon"), "Legendary", Array("Coconut", "Apple", "Dragon Fruit", "Mango"), "Mythical", Array("Coconut", "Pineapple") "Divine", Array("Sugar Apple", "Coconut"), "Prismatic", Array("Sugar Apple", "Coconut", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
 cookingItemRarities["Waffle"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
 cookingItems["Sandwich"] := Object("Common", Array("Tomato", "Tomato", "Corn"), "Legendary", Array("Tomato", "Corn", "Cacao"), "Mythical", Array("Tomato", "Corn", "Elder Strawberry"))
@@ -1430,6 +1433,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Text, x50 y190, Macro Speed:
     Gui, Font, s8 cBlack, Segoe UI
     IniRead, SavedSpeed, %settingsFile%, Main, MacroSpeed, Stable
+    Msgbox, %SavedSpeed%
     Gui, Add, DropDownList, vSavedSpeed gUpdateSpeed x130 y190 w50, Stable|Fast|Ultra|Max
     GuiControl, ChooseString, SavedSpeed, %SavedSpeed%
 
@@ -1734,6 +1738,8 @@ UpdateSettingColor:
 
     GuiControl, %multiInstanceColor%, MultiInstanceMode
     GuiControl, +Redraw, MultiInstanceMode
+
+    Gosub, SaveSettings
 
 return
 
@@ -3241,21 +3247,10 @@ CookingPath:
     closeRobuxPrompt()
     SafeClickRelative(0.573347107, 0.411931818)
     sleep, 500
-    SafeClickRelative(0.5, 0.5)
-    sleep, 500
-
-    Send, {d down}
-    sleep, 800
-    Send, {d up}
-
-    Send, {e}
-    sleep, 500
-    searchItem("food")
-    sleep, 500
-    SafeClickRelative(0.8, 0.625)
-    sleep, 500
 
     SafeClickRelative(0.5, 0.127)
+
+    Gosub, alignment
 
 
 Return
@@ -4343,7 +4338,7 @@ SaveSettings:
     IniWrite, % AutoCollectCorrupt, %settingsFile%, Zen, AutoCollectCorrupt
 
     ; — Main section —
-    IniWrite, % AutoAlign,             %settingsFile%, Main, AutoAlign
+    IniWrite, %AutoAlign%,      %settingsFile%, Main, AutoAlign
     IniWrite, % PingSelected,          %settingsFile%, Main, PingSelected
     IniWrite, % MultiInstanceMode,     %settingsFile%, Main, MultiInstanceMode
     IniWrite, % SavedSpeed,            %settingsFile%, Main, MacroSpeed
