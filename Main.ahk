@@ -62,6 +62,14 @@ global SelectedCookingRarity
 global SavedSpeed
 global AutoAlign
 
+
+IniRead, AutoAlign, %settingsFile%, Main, AutoAlign
+if (ErrorLevel || AutoAlign = "" || AutoAlign = "ERROR")
+    AutoAlign := 1  ; or whatever your preferred fallback is
+IniRead, SavedSpeed, %settingsFile%, Main, MacroSpeed
+if (ErrorLevel || SavedSpeed = "" || SavedSpeed = "ERROR")
+    SavedSpeed := "Stable"  ; or whatever your preferred fallback is
+
 IniRead, mapSide, %settingsFile%, Main, MapSide
 
 global GAME_PASS_ID  := 1244038348
@@ -88,7 +96,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 CheckForUpdate() { 
-    currentVersion := "Cooking1.01" ; <-- Set your current version here 
+    currentVersion := "Cooking1.02" ; <-- Set your current version here 
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
     whr.Open("GET", latestURL, false) 
@@ -1320,7 +1328,7 @@ ShowGui:
     }
     Gui, Add, Text, x288 y125, Rarity:
     IniRead, SelectedCookingRarity, %settingsFile%, Cooking, SelectedCookingRarity
-    Gui, Add, DropDownList, x335 y125 w90 vSelectedCookingRarity, |
+    Gui, Add, DropDownList, x335 y125 w90 vSelectedCookingRarity gRarityClicked, |
     Gosub, CookingItemClicked
 
 
@@ -1384,7 +1392,7 @@ ShowGui:
     pingColor := PingSelected ? "c90EE90" : "cD3D3D3"
     Gui, Add, Checkbox, % "x50 y255 vPingSelected gUpdateSettingColor " . pingColor . (PingSelected ? " Checked" : ""), Discord Pings
     
-    IniRead, AutoAlign, %settingsFile%, Main, AutoAlign, 0
+    IniRead, AutoAlign, %settingsFile%, Main, AutoAlign
     autoColor := AutoAlign ? "c90EE90" : "cD3D3D3"
     Gui, Add, Checkbox, % "x50 y280 vAutoAlign gUpdateSettingColor " . autoColor . (AutoAlign ? " Checked" : ""), Auto-Align
 
@@ -1433,7 +1441,6 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Text, x50 y190, Macro Speed:
     Gui, Font, s8 cBlack, Segoe UI
     IniRead, SavedSpeed, %settingsFile%, Main, MacroSpeed, Stable
-    Msgbox, %SavedSpeed%
     Gui, Add, DropDownList, vSavedSpeed gUpdateSpeed x130 y190 w50, Stable|Fast|Ultra|Max
     GuiControl, ChooseString, SavedSpeed, %SavedSpeed%
 
@@ -2267,6 +2274,15 @@ BuySummer:
 Return
 */
 
+FindInArray(array, find) {
+    for k,v in array {
+        if (v = find) {
+            return true
+        }
+    }
+    return false
+}
+
 AutoPlantsClicked:
     Gui, Submit, NoHide ; Submit the GUI (gets current state of controls)
     if (AutoCollectPlants) ; If the checkbox is checked
@@ -2304,8 +2320,24 @@ Return
 
 RarityClicked:
     Gosub, SaveSettings
-    Gui, Destroy
-    Gosub, ShowGui
+    ingredientsNeeded := []
+    for each, ingredient in cookingItems[selectedCookingItem][selectedCookingRarity] {
+        ingredientFound := FindInArray(ingredientsNeeded, ingredient)
+        if (!ingredientFound) {
+            ingredientsNeeded.Push(ingredient)
+        }
+    }
+    if (AutoCollectPlants) {
+        ingredientString := "Make sure to plant lots of "
+        ingredientStringFinal := "in your garden!"
+    } else {
+        ingredientString := "Make sure you have lots of "
+        ingredientStringFinal := "in your inventory!"
+    }
+    for each, ingredient in ingredientsNeeded {
+        ingredientString .= ingredient . ", "
+    }
+    MsgBox, %ingredientString%%ingredientStringFinal%
 Return
 
 AutoCorruptClicked:
@@ -3122,8 +3154,10 @@ CraftSeedPath:
             sleep, 100
             Send, {down}
             sleep, 100
-            Send, {Enter}{\}
+            Send, {Enter}
             sleepAmount(100, 1000)
+            Send, {%SavedKeybind%}
+            sleep, 500
             
         }
         Tooltip, Adding Ingredients
@@ -3185,8 +3219,10 @@ CraftPath:
             sleep, 100
             Send, {down}
             sleep, 100
-            Send, {Enter}{\}
+            Send, {Enter}
             sleepAmount(100, 1000)
+            Send, {%SavedKeybind%}
+            sleep, 500
             
         }
         Tooltip, Adding Ingredients
@@ -3630,7 +3666,9 @@ CollectPlantsPath:
     Send, {e down}
     sleepAmount(8000, 10000)
     Send, {e up}
+    Sleep, 500
     SafeClickRelative(0.64824, 0.21306)
+    Sleep, 500
     Send, {a down}
     Sleep, 800
     Send, {a up}
