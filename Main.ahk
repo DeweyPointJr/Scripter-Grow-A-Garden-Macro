@@ -96,7 +96,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 CheckForUpdate() { 
-    currentVersion := "Cooking1.02" ; <-- Set your current version here 
+    currentVersion := "Cooking1.03" ; <-- Set your current version here 
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
     whr.Open("GET", latestURL, false) 
@@ -598,15 +598,14 @@ searchItem(search := "nil", crafting := 0, type := "None") {
 
         SendInput, ``
         sleepAmount(100, 1000)
-        SafeClickRelative(0.655991736, 0.63446969697)
         sleepAmount(100, 1000)
-        SafeClickRelative(0.6095, 0.6439)
-        Sleep, 50
+        Sleep, 500
+        uiUniversal("05530", 0)    
         SendInput, {Ctrl down}{A}{Right}{Ctrl up}  
         if !(search = "food")  { 
-            typeString(search)
+            typeString(search, 1, 1, 1)
         }
-        Sleep, 50
+        Sleep, 500
 
         
 
@@ -657,6 +656,12 @@ searchItem(search := "nil", crafting := 0, type := "None") {
                 sleep, 250
                 SafeClickRelative(0.380681818182, 0.6818)
                 sleep, 250
+                SafeClickRelative(0.415363636, 0.6818)
+                sleep, 250
+                Send, {E}
+                sleep, 250
+                SafeClickRelative(0.415363636, 0.6818)
+                sleep, 250
             }
             SendInput, ``
             sleep, 250
@@ -672,14 +677,15 @@ searchItem(search := "nil", crafting := 0, type := "None") {
 
 }
 
-typeString(string, enter := 1, clean := 1) {
+typeString(string, enter := 1, clean := 1, backslash := 0) {
 
     if (string = "") {
         Return
     }
 
     if (clean) {
-        Send {BackSpace 20}
+        repeatKey("right", 50)
+        Send {BackSpace 50}
         Sleep, 100
     }
 
@@ -695,6 +701,10 @@ typeString(string, enter := 1, clean := 1) {
 
     if (enter) {
         Send, {Enter}
+    }
+
+    if (backslash) {
+        Send, %savedKeybind%
     }
 
     Return
@@ -3281,7 +3291,7 @@ CookingPath:
         sleepAmount(100,1000)
     }
     closeRobuxPrompt()
-    SafeClickRelative(0.573347107, 0.411931818)
+    SafeClickRelative(0.595041322314, 0.392992424242)
     sleep, 500
 
     SafeClickRelative(0.5, 0.127)
@@ -3676,6 +3686,9 @@ CollectPlantsPath:
     Send, {e down}
     sleepAmount(8000, 10000)
     Send, {e up}
+    Sleep, 500
+    SafeClickRelative(0.64824, 0.21306)
+    Sleep, 500
     Send, {a down}
     Sleep, 600
     Send, {a up}
