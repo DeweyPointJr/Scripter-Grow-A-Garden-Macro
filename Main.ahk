@@ -96,7 +96,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 CheckForUpdate() { 
-    currentVersion := "Cooking1.03" ; <-- Set your current version here 
+    currentVersion := "Cooking1.02" ; <-- Set your current version here 
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
     whr.Open("GET", latestURL, false) 
@@ -598,14 +598,15 @@ searchItem(search := "nil", crafting := 0, type := "None") {
 
         SendInput, ``
         sleepAmount(100, 1000)
+        SafeClickRelative(0.655991736, 0.63446969697)
         sleepAmount(100, 1000)
-        Sleep, 500
-        uiUniversal("05530", 0)    
+        SafeClickRelative(0.6095, 0.6439)
+        Sleep, 50
         SendInput, {Ctrl down}{A}{Right}{Ctrl up}  
         if !(search = "food")  { 
-            typeString(search, 1, 1, 1)
+            typeString(search)
         }
-        Sleep, 500
+        Sleep, 50
 
         
 
@@ -677,7 +678,7 @@ searchItem(search := "nil", crafting := 0, type := "None") {
 
 }
 
-typeString(string, enter := 1, clean := 1, backslash := 0) {
+typeString(string, enter := 1, clean := 1) {
 
     if (string = "") {
         Return
@@ -701,10 +702,6 @@ typeString(string, enter := 1, clean := 1, backslash := 0) {
 
     if (enter) {
         Send, {Enter}
-    }
-
-    if (backslash) {
-        Send, %savedKeybind%
     }
 
     Return
