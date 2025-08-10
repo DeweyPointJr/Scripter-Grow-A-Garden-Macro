@@ -96,7 +96,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 CheckForUpdate() { 
-    currentVersion := "Cooking1.02" ; <-- Set your current version here 
+    currentVersion := "KitchenStorm1.0" ; <-- Set your current version here 
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
     whr.Open("GET", latestURL, false) 
@@ -1064,16 +1064,16 @@ craftingItemOrder := ["Lightning Rod", "Tanning Mirror", "Reclaimer", "Tropical 
 
 cookingItems := Object()
 cookingItemRarities := Object()
-cookingItemOrder:= ["Hotdog", "Pie", "Burger", "Salad", "Waffle", "Sandwich", "Ice Cream", "Donut", "Pizza", "Sushi", "Cake"]
+cookingItemOrder:= ["Hotdog", "Pie", "Burger", "Salad", "Waffle", "Sandwich", "Ice Cream", "Donut", "Pizza", "Sushi", "Cake", "Smoothie", "Candy Apple", "Sweet Tea", "Porridge", "Spaghetti"]
 
 cookingItems["Hotdog"] := Object("Common", Array("Corn", "Corn", "Watermelon"), "Legendary", Array("Pepper", "Corn"), "Prismatic", Array("Corn", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
 cookingItemRarities["Hotdog"] := Array("Common", "Legendary", "Prismatic")
-cookingItems["Pie"] := Object("Common", Array("Pumpkin", "Apple"), "Prismatic", "Legendary", Array("Pumpkin", "Giant Pinecone", "Corn", "Apple"), "Mythical", Array("Apple", "Pumpkin"), "Divine", Array("Coconut", "Beanstalk") Array("Pumpkin", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
-cookingItemRarities["Pie"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Pie"] := Object("Common", Array("Pumpkin", "Apple"), "Prismatic", "Legendary", Array("Pumpkin", "Giant Pinecone", "Corn", "Apple"), "Mythical", Array("Apple", "Pumpkin"), "Divine", Array("Coconut", "Beanstalk"), "Prismatic/Transcendent", Array("Pumpkin", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Pie"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic/Transcendent")
 cookingItems["Burger"] := Object("Legendary", Array("Pepper", "Corn", "Tomato"), "Mythical", Array("Pepper", "Corn", "Tomato", "Beanstalk", "Beanstalk"), "Prismatic", Array("Corn", "Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
 cookingItemRarities["Burger"] := Array("Legendary", "Mythical", "Prismatic")
-cookingItems["Salad"] := Object("Common", Array("Tomato", "Tomato"), "Rare", Array("Tomato", "Tomato", "Tomato", "Tomato", "Tomato"), "Mythical", Array("Tomato", "Giant Pinecone"), "Divine", Array("Sugar Apple", "Sugar Apple", "Sugar Apple", "Pepper", "Pineapple"), "Prismatic", Array("Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
-cookingItemRarities["Salad"] := Array("Common", "Rare", "Mythical", "Divine", "Prismatic")
+cookingItems["Salad"] := Object("Common", Array("Tomato", "Tomato"), "Rare", Array("Tomato", "Tomato", "Tomato", "Tomato", "Tomato"), "Mythical", Array("Tomato", "Giant Pinecone"), "Divine", Array("Sugar Apple", "Sugar Apple", "Sugar Apple", "Pepper", "Pineapple"), "Prismatic/Transcendent", Array("Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Salad"] := Array("Common", "Rare", "Mythical", "Divine", "Prismatic/Transcendent")
 cookingItems["Waffle"] := Object("Common", Array("Pumpkin", "Watermelon"), "Legendary", Array("Coconut", "Apple", "Dragon Fruit", "Mango"), "Mythical", Array("Coconut", "Pineapple") "Divine", Array("Sugar Apple", "Coconut"), "Prismatic", Array("Sugar Apple", "Coconut", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
 cookingItemRarities["Waffle"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
 cookingItems["Sandwich"] := Object("Common", Array("Tomato", "Tomato", "Corn"), "Legendary", Array("Tomato", "Corn", "Cacao"), "Mythical", Array("Tomato", "Corn", "Elder Strawberry"))
@@ -1088,6 +1088,16 @@ cookingItems["Sushi"] := Object("Common", Array("Bamboo", "Bamboo", "Bamboo", "B
 cookingItemRarities["Sushi"] := Array("Common", "Legendary", "Mythical", "Divine", "Prismatic")
 cookingItems["Cake"] := Object("Uncommon", Array("Corn", "Corn", "Strawberry", "Strawberry"), "Rare", Array("Corn", "Corn", "Watermelon", "Watermelon"), "Legendary", Array("Kiwi", "Kiwi", "Corn", "Corn"), "Mythical", Array("Sugar Apple", "Sugar Apple", "Corn", "Corn"), "Divine", Array("Banana", "Sugar Apple", "Sugar Apple", "Sugar Apple", "Sugar Apple"), "Prismatic", Array("Banana", "Bone Blossom", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
 cookingItemRarities["Cake"] := Array("Uncommon", "Rare", "Legendary", "Mythical", "Divine", "Prismatic")
+cookingItems["Smoothie"] := Object("Legendary", Array("Tomato", "Tomato", "Tomato", "Tomato", "Green Apple"), "Mythical", Array("Apple", "Apple", "Apple", "Apple", "Apple"), "Divine", Array("Coconut", "Beanstalk"), "Prismatic", Array("Bone Blossom", "Bone Blossom", "Coconut"), "Transcendent", Array("Bone Blossom", "Bone Blossom", "Bone Blossom", "Coconut"))
+cookingItemRarities["Smoothie"] := Array("Legendary", "Mythical", "Divine", "Prismatic", "Transcendent")
+cookingItems["Candy Apple"] := Object("Divine", Array("Banana", "Sugar Apple", "Bone Blossom", "Bone Blossom", "Bone Blossom"), "Prismatic", Array("Sugar Apple", "Ember Lily"), "Transcendent", Array("Sugar Apple", "Sugarglaze"))
+cookingItemRarities["Candy Apple"] := Array("Divine", "Prismatic", "Transcendent")
+cookingItems["Sweet Tea"] := Object("Divine", Array("Burning Bud", "Sugarglaze"), "Prismatic", Array("Burning Bud", "Sugar Apple", "Sugar Apple", "Sugar Apple", "Sugar Apple"), "Transcendent", Array("Burning Bud", "Sugar Apple", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Sweet Tea"] := Array("Divine", "Prismatic", "Transcendent")
+cookingItems["Porridge"] := Object("Prismatic", Array("Corn", "Sugar Apple", "Sugar Apple", "Sugar Apple", "Sugar Apple"))
+cookingItemRarities["Porridge"] := Array("Prismatic")
+cookingItems["Spaghetti"] := Object("Divine", Array("Pepper", "Corn", "Tomato", "Beanstalk", "Beanstalk"), "Prismatic", Array("Corn", "Tomato", "Bone Blossom", "Bone Blossom", "Bone Blossom"), "Transcendent", Array("Grand Tomato", "Sugarglaze", "Bone Blossom", "Bone Blossom", "Bone Blossom"))
+cookingItemRarities["Spaghetti"] := Array("Divine", "Prismatic", "Transcendent")
 
 
 ; honeyItems := ["Flower Seed Pack", "placeHolder1", "Lavender Seed", "Nectarshade Seed", "Nectarine Seed", "Hive Fruit Seed", "Pollen Rader", "Nectar Staff"
@@ -1500,7 +1510,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     ; Gui, Add, Button, x50 y270 w100 h25 gDonate vDonate2500 BackgroundF0F0F0, 2500 Robux
     ; Gui, Add, Button, x50 y330 w100 h25 gDonate vDonate10000 BackgroundF0F0F0, 10000 Robux
     
-    Gui, Show, w520 h460, Scripter GAG Macro [COOKING]
+    Gui, Show, w520 h460, Scripter GAG Macro [KITCHEN STORM]
 
 Return
 
@@ -3270,12 +3280,16 @@ CookingPath:
     sleepAmount(100, 1000)
     SafeClickRelative(0.5, 0.5)
     sleepAmount(100, 500)
+    Send, {s down}
+    sleep, 500
+    Send, {s up}
+    sleep, 500
     Send, {a down}
     Sleep, 9650
     Send, {a up}
     sleep, 500
     Send, {w down}
-    sleep, 550
+    sleep, 1050
     Send, {w up}
 
     repeatKey("e", 2)
@@ -3290,6 +3304,9 @@ CookingPath:
     closeRobuxPrompt()
     SafeClickRelative(0.595041322314, 0.392992424242)
     sleep, 500
+    SafeClickRelative(0.387396694, 0.366477272727)
+    sleep, 500
+    SafeClickRelative(0.521694214876, 0.27272727272727)
 
     SafeClickRelative(0.5, 0.127)
 
