@@ -96,7 +96,7 @@ gearScroll_1440p_100 := [2, 3, 6, 8, 10, 13, 15, 17]
 gearScroll_1440p_125 := [1, 3, 4, 6, 8, 9, 12, 12]
 
 CheckForUpdate() { 
-    currentVersion := "KitchenStorm1.0" ; <-- Set your current version here 
+    currentVersion := "Beanstalk0.5" ; <-- Set your current version here 
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest" 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1") 
     whr.Open("GET", latestURL, false) 
@@ -715,7 +715,7 @@ dialogueClick(shop) {
     Sleep, 500
 
     if (shop = "gear") {
-        SafeClickRelative(midX + 0.4, midY - 0.05)
+        SafeClickRelative(midX + 0.4, midY)
     }
     else if (shop = "honey") {
         SafeClickRelative(midX + 0.4, midY)
@@ -1008,7 +1008,7 @@ seedItems := ["Carrot Seed", "Strawberry Seed", "Blueberry Seed", "Orange Tulip"
              , "Pumpkin Seed", "Apple Seed", "Bamboo Seed", "Coconut Seed"
              , "Cactus Seed", "Dragon Fruit Seed", "Mango Seed", "Grape Seed"
              , "Mushroom Seed", "Pepper Seed", "Cacao Seed", "Beanstalk Seed", "Ember Lily"
-	     , "Sugar Apple", "Burning Bud", "Giant Pinecone Seed", "Elder Strawberry Seed"]
+	     , "Sugar Apple", "Burning Bud", "Giant Pinecone Seed", "Elder Strawberry Seed", "Romanesco"]
 
 gearItems := ["Watering Can", "Trading Ticket", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat"
              , "Godly Sprinkler", "Magnifying Glass", "Master Sprinkler", "Cleaning Spray", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Grandmaster Sprinkler"
@@ -1057,10 +1057,11 @@ craftingItems["Mutation Spray Shocked"] := Object("ingredients", Array("Cleaning
 craftingItems["Anti Bee Egg"] := Object("ingredients", Array("Bee Egg"), "time", 120)
 craftingItems["Small Toy"] := Object("ingredients", Array("Common Egg", "Coconut Seed", "Coconut"), "time", 10)
 craftingItems["Small Treat"] := Object("ingredients", Array("Common Egg", "Dragon Fruit Seed", "Blueberry"), "time", 10)
+craftingItems["Pet Pouch"] := Object("ingredients", Array("Common Egg", "Corndog", "Small Treat", "Small Toy"), "time", 10)
 craftingItems["Pack Bee"] := Object("ingredients", Array("Anti Bee Egg", "Sunflower", "Purple Dahlia"), "time", 240)
 
 craftingItemOrder := ["Lightning Rod", "Tanning Mirror", "Reclaimer", "Tropical Mist Sprinkler", "Berry Blusher Sprinkler", "Spice Spritzer Sprinkler", "Sweet Soaker Sprinkler"
-                     , "Flower Froster Sprinkler", "Stalk Sprout Sprinkler", "Mutation Spray Choc", "Mutation Spray Chilled", "Anti Bee Egg", "Small Toy", "Small Treat", "Pack Bee"]
+                     , "Flower Froster Sprinkler", "Stalk Sprout Sprinkler", "Mutation Spray Choc", "Mutation Spray Chilled", "Anti Bee Egg", "Small Toy", "Small Treat", "Pet Pouch", "Pack Bee"]
 
 cookingItems := Object()
 cookingItemRarities := Object()
@@ -1160,7 +1161,7 @@ ShowGui:
     Gui, Margin, 10, 10
     Gui, Color, 0x202020
     Gui, Font, s9 cWhite, Segoe UI
-    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Merchants|Crafting|Cooking|Settings|Credits
+    Gui, Add, Tab, x10 y10 w580 h440 vMyTab, Seeds|Gears|Eggs|Merchants|Crafting|Settings|Credits
 
     Gui, Tab, 1
     Gui, Font, s9 c90EE90 Bold, Segoe UI
@@ -1315,7 +1316,7 @@ ShowGui:
         Gui, Add, Radio, %opt%, %itemName%
     }
 
-    Gui, Tab, 6
+    /*Gui, Tab, 6
     Gui, Font, s9 cE27466 Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cE27466, Cooking
     IniRead, AutoCollectPlants, %settingsFile%, Cooking, AutoCollectPlants, 0
@@ -1347,6 +1348,7 @@ ShowGui:
     IniRead, SelectedCookingRarity, %settingsFile%, Cooking, SelectedCookingRarity
     Gui, Add, DropDownList, x335 y125 w90 vSelectedCookingRarity gRarityClicked, |
     Gosub, CookingItemClicked
+    
 
 
     
@@ -1401,7 +1403,7 @@ ShowGui:
     ; Gui, Add, Radio, x50 y280 gUpdateResolution c708090 %opt3%, 1920x1080 100`%
     ; Gui, Add, Radio, x50 y300 gUpdateResolution c708090 %opt4%, 1280x720 100`%
 
-    Gui, Tab, 7
+    Gui, Tab, 6
     Gui, Font, s9, cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Settings
 
@@ -1472,7 +1474,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     Gui, Add, Button, x50 y335 w150 h40 gStartScanMultiInstance Background202020, Start Macro (F5)
     Gui, Add, Button, x320 y335 w150 h40 gQuit Background202020, Stop Macro (F7)
 
-    Gui, Tab, 8
+    Gui, Tab, 7
     Gui, Font, s9 cWhite Bold, Segoe UI
     Gui, Add, GroupBox, x23 y50 w475 h340 cD3D3D3, Credits
 
@@ -1510,7 +1512,7 @@ Gui, Add, Edit, x180 y165 w40 h18 Limit1 vSavedKeybind gUpdateKeybind, %SavedKey
     ; Gui, Add, Button, x50 y270 w100 h25 gDonate vDonate2500 BackgroundF0F0F0, 2500 Robux
     ; Gui, Add, Button, x50 y330 w100 h25 gDonate vDonate10000 BackgroundF0F0F0, 10000 Robux
     
-    Gui, Show, w520 h460, Scripter GAG Macro [KITCHEN STORM]
+    Gui, Show, w520 h460, Scripter GAG Macro [BEANSTALK]
 
 Return
 
