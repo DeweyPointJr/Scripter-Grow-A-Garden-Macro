@@ -1156,6 +1156,8 @@ Gosub, ShowGui
 ; main ui
 ShowGui:
 
+    MsgBox, This is not the final version of this update! I will add permanent cooking and the Beanstalk event when I get a chance.
+
     Gui, Destroy
     Gui, +Resize +MinimizeBox +SysMenu
     Gui, Margin, 10, 10
