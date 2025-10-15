@@ -1,0 +1,4 @@
+Version Cards1.1
+
+Additions:
+ - Made auto hit list also restart the track
