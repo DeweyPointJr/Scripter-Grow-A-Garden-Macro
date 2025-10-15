@@ -1080,6 +1080,7 @@ AutoAlignCameraLabel:
             ClickRelative(1251, 133, 1, 1)
             Sleep, 25
         }
+        Sleep, 1000
         ClickRelative(1251, 133, 1, 1)
         Sleep, 1000
         ; Chance camera back
