@@ -1,4 +1,8 @@
-Version Cards1.1
+Version HalloweenPart3-1.0
 
 Additions:
- - Made auto hit list also restart the track
+ - Added merchants!!
+ - Added Pet Lead and Pet Name Reroller
+
+Sorry, but the halloween event will not be added to the macro. 
+I will start adding events with the next one.

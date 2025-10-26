@@ -11,6 +11,18 @@ global RobloxWindow
 global iniFile := A_ScriptDir "\config.ini"
 
 global AutoAlignCamera
+global CurrentShop := ""
+
+global shopKeys := Object()
+shopKeys["Seeds"] := "Seed"
+shopKeys["Gears"] := "Gear"
+shopKeys["Eggs"] := "Egg"
+shopKeys["Sky"] := "Sky"
+shopKeys["Gnomes"] := "Gnome"
+shopKeys["Honey"] := "Honey"
+shopKeys["Summer"] := "Summer"
+shopKeys["Sprinklers"] := "Sprinkler"
+shopKeys["Fall"] := "Fall"
 
 ; === Read from INI ===
 iniFile := "config.ini"
@@ -31,15 +43,28 @@ global backpackBtnY
 IniRead, backpackBtnX, %iniFile%, Settings, backpackBtnX, 204
 IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 
+
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Orange Tulip", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
                 , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Great Pumpkin"]
 
-global gears := ["Watering Can", "Trading Ticket", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Medium Treat", "Godly Sprinkler", "Magnifying Glass"
+global gears := ["Watering Can", "Trading Ticket", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Pet Name Reroller", "Pet Lead", "Medium Treat", "Godly Sprinkler", "Magnifying Glass"
                 , "Master Sprinkler", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Grandmaster Sprinkler", "Levelup Lollipop"]
 
 global eggs := ["Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Jungle Egg", "Bug Egg"]
+
+global gnomes := ["Common Gnome Crate", "Farmers Gnome Crate", "Classic Gnome Crate", "Iconic Gnome Crate", "Gnome"]
+
+global sky := ["Night Staff", "Star Caller", "Mutation Spray Cloudtouched"]
+
+global honey := ["Flower Seed Pack", "Honey Sprinkler", "Bee Egg", "Bee Crate", "Honey Crafters Crate"]
+
+global summer := ["Cauliflower", "Rafflesia", "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper", "Prickly Pear", "Loquat", "Feijoa", "Pitcher Plant", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"]
+
+global sprinklers := ["Tropical Mist Sprinkler", "Berry Blusher Sprinkler", "Spice Spritzer Sprinkler", "Sweet Soaker Sprinkler", "Flower Froster Sprinkler", "Stalk Sprout Sprinkler"]
+
+global fall := ["Fall Seed Pack", "Kniphofia", "Maple Resin", "Fall Egg", "Chipmunk", "Space Squirrel", "Red Panda", "Bonfire", "Harvest Basket", "Super Leaf Blower", "Rake", "Leaf Crate", "Maple Crate", "Fall Fountain"]
 
 global seedCraftingOrder := ["None", "Mandrake", "Evo Apple I", "Evo Apple II", "Evo Apple III", "Evo Apple IV"]
 
@@ -52,10 +77,26 @@ shops["Seeds"] := seeds
 shops["Gears"] := gears
 shops["Eggs"] := eggs
 
+; add merchant shops to the same map
+shops["Gnomes"] := gnomes
+shops["Sky"]    := sky
+shops["Honey"]  := honey
+shops["Summer"] := summer
+shops["Sprinklers"] := sprinklers
+shops["Fall"]   := fall
+
 global shopPrefixes := Object()
 shopPrefixes["Seeds"] := "Seed"
 shopPrefixes["Gears"] := "Gear"
-shopPrefixes["Eggs"] := "Egg"
+shopPrefixes["Eggs"]  := "Egg"
+
+; add merchant prefixes
+shopPrefixes["Gnomes"] := "Gnome"
+shopPrefixes["Sky"]    := "Sky"
+shopPrefixes["Honey"]  := "Honey"
+shopPrefixes["Summer"] := "Summer"
+shopPrefixes["Sprinklers"] := "Sprinkler"
+shopPrefixes["Fall"]   := "Fall"
 
 ; FUNCTIONS
 ClickRelative(relX, relY, coord := 0, noDelay := 0) {
@@ -234,8 +275,137 @@ PixelColorFound(color, x1, y1, x2, y2, variation := 0) {
         return 0
 }
 
+capitalizeFirst(text) {
+    firstChar := SubStr(text, 1, 1)
+    StringUpper, firstChar, firstChar, T
+    return firstChar . SubStr(text, 2)
+}
+
+
+AnyItemsSelected(shopName) {
+    global shops
+    anyItemsSelected := false
+    capitalized := capitalizeFirst(shopName)
+
+    shop := shops[capitalized]
+
+    ; Determine the INI key prefix from the dictionary
+    keyPrefix := shopKeys[capitalized]
+    if (keyPrefix = "")
+    {
+        MsgBox, 48, Error, No key mapping found for shop "%capitalized%"
+        return false
+    }
+    anyItemsSelected := false
+
+    ; Loop through the items in the given shop array (e.g., Seeds, Tools, etc.)
+    for i, item in shop
+    {
+        IniRead, checked, %iniFile%, %capitalized%, %keyPrefix%%i%, 0
+        if (checked = "1" || checked = 1)
+        {
+            anyItemsSelected := true
+            break
+        }
+    }
+
+    return anyItemsSelected
+}
+
+BuyFromShop(shopName) {
+    global doubleScrolls, itemPositions, seeds, gears, iniFile, ahopa
+
+    global RobloxWindow
+    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+    if !RobloxWindow {
+        MsgBox, Roblox window not found!
+        return
+    }
+
+    ; First use UI navigation to get to the first item
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
+    Sleep, 100
+    ClickRelative(983, 728, 1)
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD", 0, 0)
+
+    ; Accept either array directly or a string name
+    if shops.hasKey(shopName) {
+        shopItems := shops[shopName]
+        section := shopName
+        prefix := shopPrefixes[shopName]
+    }
+
+    ; Find all selected items (read directly from config.ini)
+    selectedItems := []
+    for i, item in shopItems {
+        IniRead, checked, %iniFile%, %section%, %prefix%%i%, 0
+        if (checked = "1" || checked = 1) {
+            selectedItems.Push(item)
+        }
+    }
+
+    ; Build fast lookup maps
+    selectedIndexMap := {}
+    selectedNameMap := {}
+    for k, v in selectedItems {
+        selectedIndexMap[k] := true
+        selectedIndexMap[v] := true
+        selectedNameMap[k] := true
+        selectedNameMap[v] := true
+    }
+
+    ; Loop through shop items
+    for index, item in shopItems {
+        idx := index + 0
+
+        ; Skip scrolling for the first item
+        if (idx != 1) {
+            Send, {Down}
+            Sleep, 500
+        }
+
+        ; If selected, click its position
+        if (selectedIndexMap.HasKey(index) || selectedIndexMap.HasKey(idx) || selectedNameMap.HasKey(item)) {
+            ToolTip, Buying %item%
+            noGifting := false
+            if (prefix = "Gear" && idx = 3) || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey") || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") {
+                noGifting := true
+            }
+            if (noGifting = true) {
+                UINavigation("E|||||D", 1, 0)
+            } else {
+                UINavigation("E|||||DL", 1, 0)
+            }
+            Sleep, 100
+            if PixelColorFound(0x1DB31D, 598, 313, 1311, 875, 0) {
+                UINavigation("EEEEEEEEEE", 1, 0)
+            }
+        }
+        Sleep, 150
+    }
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDE", 1, 0)
+
+    global RobloxWindow
+    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+    if !RobloxWindow {
+        MsgBox, Roblox window not found!
+        return
+    }
+    Sleep, 1000
+    ClickRelative(0.5, 0.5)
+    Sleep, 1000
+    Return
+}
+
+CloseRobuxPrompt() {
+    Send, {Esc}
+    Sleep, 100
+    Send, {Esc}
+    Sleep, 1000
+}
+
 CheckForUpdate() {
-    currentVersion := "Halloween1.0" ; <-- Set your current version here
+    currentVersion := "HalloweenPart3-1.0" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -311,98 +481,6 @@ CheckForUpdatedUpdater() {
 
 
 CheckForUpdate()
-
-BuyFromShop(shopName) {
-    global doubleScrolls, itemPositions, seeds, gears, iniFile
-
-    global RobloxWindow
-    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
-    if !RobloxWindow {
-        MsgBox, Roblox window not found!
-        return
-    }
-
-    ; First use UI navigation to get to the first item
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
-    Sleep, 100
-    ClickRelative(983, 728, 1)
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD", 0, 0)
-
-    ; Accept either array directly or a string name
-    if shops.hasKey(shopName) {
-        shopItems := shops[shopName]
-        section := shopName
-        prefix := shopPrefixes[shopName]
-    }
-
-    ; Find all selected items (read directly from config.ini)
-    selectedItems := []
-    for i, item in shopItems {
-        IniRead, checked, %iniFile%, %section%, %prefix%%i%, 0
-        if (checked = "1" || checked = 1) {
-            selectedItems.Push(item)
-        }
-    }
-
-    ; Build fast lookup maps
-    selectedIndexMap := {}
-    selectedNameMap := {}
-    for k, v in selectedItems {
-        selectedIndexMap[k] := true
-        selectedIndexMap[v] := true
-        selectedNameMap[k] := true
-        selectedNameMap[v] := true
-    }
-
-    ; Loop through shop items
-    for index, item in shopItems {
-        idx := index + 0
-
-        ; Skip scrolling for the first item
-        if (idx != 1) {
-            Send, {Down}
-            Sleep, 500
-        }
-
-        ; If selected, click its position
-        if (selectedIndexMap.HasKey(index) || selectedIndexMap.HasKey(idx) || selectedNameMap.HasKey(item)) {
-            ToolTip, Buying %item%
-            noGifting := false
-            if (prefix = "Gear" && idx = 3) {
-                noGifting := true
-            }
-            if (noGifting = true) {
-                UINavigation("E|||||D", 1, 0)
-            } else {
-                UINavigation("E|||||DL", 1, 0)
-            }
-            Sleep, 100
-            if PixelColorFound(0x1DB31D, 598, 313, 1311, 875, 0) {
-                UINavigation("EEEEEEEEEE", 1, 0)
-            }
-        }
-        Sleep, 150
-    }
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDE", 1, 0)
-
-    global RobloxWindow
-    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
-    if !RobloxWindow {
-        MsgBox, Roblox window not found!
-        return
-    }
-    Sleep, 1000
-    ClickRelative(0.5, 0.5)
-    Sleep, 1000
-    Return
-}
-
-CloseRobuxPrompt() {
-    Send, {Esc}
-    Sleep, 100
-    Send, {Esc}
-    Sleep, 1000
-}
 
 ; Show Gui
 Gosub, MainGui
@@ -502,6 +580,11 @@ MainLoop:
         if (anyCraftingItemsSelected = 1) {
             CraftingLabel(item)
         }
+
+        ; Check if any merchant items are selected
+        if (AnyItemsSelected("Sky") = 1 || AnyItemsSelected("Gnomes") = 1 || AnyItemsSelected("Honey") = 1 || AnyItemsSelected("Summer") = 1 || AnyItemsSelected("Sprinklers") = 1 || AnyItemsSelected("Fall") = 1) {
+            Gosub, MerchantLabel
+        }
     } else {
         MsgBox, Roblox window not found!
     }
@@ -557,6 +640,22 @@ CraftEventsGui:
     Gui, Show, w200 h240, Scripter Macro
 Return
 
+MerchantsGui:
+    Gui, Destroy
+    Gui, New, +Resize, Scripter Macro
+
+    ; Buttons stacked vertically
+    Gui, Add, Button, w180 h40 gGnomeGui, Gnome Merchant
+    Gui, Add, Button, w180 h40 gSkyGui, Sky Merchant
+    Gui, Add, Button, w180 h40 gHoneyGui, Honey Merchant
+    Gui, Add, Button, w180 h40 gSprinklerGui, Sprinkler Merchant
+    Gui, Add, Button, w180 h40 gSummerGui, Summer Merchant
+    Gui, Add, Button, w180 h40 gFallGui, Fall Merchant
+    Gui, Add, Button, w180 h40 gShopsGui, Back
+
+    ; Show GUI
+    Gui, Show, w200 h330, Scripter Macro
+Return
 
 SeedsGui:
     global seeds
@@ -834,6 +933,36 @@ CraftingGui:
     Gui, Show, w%totalWidth% h%totalHeight%, Crafting Selection
 Return
 
+GnomeGui:
+    CurrentShop := "Gnomes"
+    Gosub, ShowShopGui
+Return
+
+SkyGui:
+    CurrentShop := "Sky"
+    Gosub, ShowShopGui
+Return
+
+HoneyGui:
+    CurrentShop := "Honey"
+    Gosub, ShowShopGui
+Return
+
+SummerGui:
+    CurrentShop := "Summer"
+    Gosub, ShowShopGui
+Return
+
+SprinklerGui:
+    CurrentShop := "Sprinklers"
+    Gosub, ShowShopGui
+Return
+
+FallGui:
+    CurrentShop := "Fall"
+    Gosub, ShowShopGui
+Return
+
 SaveCrafting:
     global craftingOrder
     selected := []
@@ -849,14 +978,8 @@ SaveCrafting:
 return
 
 EventsGui:
-    MsgBox, Events are temporarily unavailable! Sorry! I will add merchants/events back this weekend.
+    MsgBox, Events are temporarily unavailable! Sorry! I will add merchants/events back after the Hallowen event is over.
 Return
-
-MerchantsGui:
-    MsgBox, Merchants are temporalily unavailable! Please check again soon.
-Return
-
-
 
 SettingsGui:
     Gui, Destroy
@@ -921,6 +1044,7 @@ Return
 
 ; Hotkey Labels
 StartHotkeyLabel() {
+    Gui, Hide
     Gosub, MainLoop
 }
 
@@ -987,7 +1111,7 @@ GearShopLabel:
     Sleep, 1000
     Send, {e}
     Sleep, 5000
-    if PixelColorFound(0x53AB3A, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0xD06839, 603, 236, 1338, 299, 10) {
         ToolTip, Gear Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1074,14 +1198,7 @@ AutoAlignCameraLabel:
         Sleep, 1000
 
         ; Teleport to shops
-        Loop, 10 {
-            ClickRelative(679, 133, 1, 1)
-            Sleep, 25
-            ClickRelative(1251, 133, 1, 1)
-            Sleep, 25
-        }
-        Sleep, 1000
-        ClickRelative(1251, 133, 1, 1)
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
         Sleep, 1000
         ; Chance camera back
         Send, {Esc}
@@ -1230,3 +1347,145 @@ CraftingLabel(item) {
     }
 Return
 }
+
+DynamicDone:
+    global CurrentShop, shops, shopKeys, iniFile
+
+    if (CurrentShop = "" || !shops.HasKey(CurrentShop)) {
+        MsgBox, 48, Warning, No shop is currently open or invalid!
+        return
+    }
+
+    shopItems := shops[CurrentShop]       ; array of items
+    keyPrefix := shopKeys[CurrentShop]    ; prefix for INI keys
+
+    ; Loop through items and save checkbox states
+    for i, item in shopItems {
+        controlVar := keyPrefix . "_" . i    ; must match vVariable of the checkbox
+        
+        GuiControlGet, checked, , %controlVar%
+        if (checked = "")                  ; ensure unchecked boxes are saved as 0
+            checked := 0
+
+        iniKey := keyPrefix . i            ; desired INI key format: Egg1, Egg2, etc.
+        IniWrite, %checked%, %iniFile%, %CurrentShop%, %iniKey%
+    }
+
+    CurrentShop := ""                      ; reset after saving
+    Gosub, MainGui                         ; return to main GUI
+Return
+
+
+ShowShopGui:
+    global shopKeys, shopPrefixes, shops, CurrentShop, iniFile
+
+    shopName := CurrentShop
+
+    ; Safety check: don't proceed if shopName is empty
+    if (shopName = "" || !shops.HasKey(shopName)) {
+        MsgBox, 48, Error, ShowShopGui called with invalid shop name: "%shopName%"
+        return
+    }
+
+    capitalized := shopName  ; your shopKeys already use capitalized names
+    keyPrefix := shopKeys[capitalized]
+    if (keyPrefix = "") {
+        MsgBox, 48, Error, No key mapping found for shop "%capitalized%"
+        return
+    }
+
+    shopItems := shops[shopName]
+
+    Gui, Destroy
+    Gui, New, +Resize, %capitalized% Selection
+
+    ; Layout settings
+    xOffset := 10
+    yOffset := 10
+    spacingX := 150
+    spacingY := 30
+    perColumn := 15
+
+    Count := shopItems.MaxIndex()
+    if (Count = "")
+        Count := 0
+
+    ; Add checkboxes dynamically
+    for i, item in shopItems {
+        col := Floor((i - 1) / perColumn)
+        row := Mod(i - 1, perColumn)
+        xPos := xOffset + (col * spacingX)
+        yPos := yOffset + (row * spacingY)
+
+        IniRead, checked, %iniFile%, %capitalized%, %keyPrefix%%i%, 0
+        global ctrlName
+        ctrlName := keyPrefix . "_" . i
+        Gui, Add, Checkbox, v%ctrlName% x%xPos% y%yPos% w140 h25, %item%
+        GuiControl,, %ctrlName%, %checked%
+    }
+
+    ; Calculate GUI size
+    totalCols := Floor((Count - 1) / perColumn) + 1
+    totalRows := (Count < perColumn) ? Count : perColumn
+    totalWidth := xOffset + (totalCols * spacingX) + 20
+    totalHeight := yOffset + (totalRows * spacingY) + 50
+
+    ; Done button
+    buttonWidth := 100
+    buttonX := (totalWidth - buttonWidth) / 2
+    buttonY := yOffset + (totalRows * spacingY) + 10
+    Gui, Add, Button, x%buttonX% y%buttonY% w%buttonWidth% h30 gDynamicDone, Done
+
+    Gui, Show, w%totalWidth% h%totalHeight%, %capitalized% Selection
+Return
+
+MerchantLabel:
+    Tooltip, Checking for Merchants
+    SetTimer, ClearTooltip, -2000
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUURE")
+    Sleep, 1000
+    Send, {s Down}
+    Sleep, 1500
+    Send, {s Up}
+    Sleep, 250
+    Send, {e}
+    Sleep, 2000
+    ClickRelative(0.733, 0.45)
+    Sleep, 2500
+
+    if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
+        Tooltip, Gnome Merchant Detected
+        if AnyItemsSelected("Gnomes") {
+            BuyFromShop("Gnomes")
+        }
+    } else if (PixelColorFound(0x617196, 641, 355, 821, 535, 3)) {
+        Tooltip, Sky Merchant Detected
+        if AnyItemsSelected("Sky") {
+            BuyFromShop("Sky")
+        }
+    } else if (PixelColorFound(0x009CCD, 641, 355, 821, 535, 3)) {
+        Tooltip, Honey Merchant Detected
+        if (AnyItemsSelected("Honey")) {
+            BuyFromShop("Honey")
+        }
+    } else if (PixelColorFound(0x00934C, 641, 355, 821, 535, 3)) {
+        Tooltip, Summer Merchant Detected
+        if (AnyItemsSelected("Summer")) {
+            BuyFromShop("Summer")
+        }
+    } else if (PixelColorFound(0xC5C83F, 641, 355, 821, 535, 3)) {
+        Tooltip, Sprinkler Merchant Detected
+        if (AnyItemsSelected("Sprinklers")) {
+            BuyFromShop("Sprinklers")
+        }
+    } else if (PixelColorFound(0xB67933, 641, 355, 821, 535, 3)) {
+        Tooltip, Fall Merchant 
+        if AnyItemsSelected("Fall") {
+            BuyFromShop("Fall")
+        }
+    } else {
+        Tooltip, No Merchant Detected
+        SetTimer, ClearTooltip, -1000
+        Sleep, 1000
+    }
+Return
