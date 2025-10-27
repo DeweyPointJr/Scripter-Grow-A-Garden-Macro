@@ -368,7 +368,7 @@ BuyFromShop(shopName) {
         if (selectedIndexMap.HasKey(index) || selectedIndexMap.HasKey(idx) || selectedNameMap.HasKey(item)) {
             ToolTip, Buying %item%
             noGifting := false
-            if (prefix = "Gear" && idx = 3) || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey") || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") {
+            if (prefix = "Gear" && idx = 3) || (prefix = "Gear" && idx = 8)  || (prefix = "Gear" && idx = 9) || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey") || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") {
                 noGifting := true
             }
             if (noGifting = true) {
@@ -383,7 +383,7 @@ BuyFromShop(shopName) {
         }
         Sleep, 150
     }
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDE", 1, 0)
+    ClickRelative(388, 544, 1)
 
     global RobloxWindow
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
@@ -405,7 +405,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "HalloweenPart3-1.0" ; <-- Set your current version here
+    currentVersion := "HalloweenPart3-1.01" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1450,8 +1450,7 @@ MerchantLabel:
     Sleep, 250
     Send, {e}
     Sleep, 2000
-    ClickRelative(0.733, 0.45)
-    Sleep, 2500
+    
 
     if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
         Tooltip, Gnome Merchant Detected
@@ -1484,8 +1483,42 @@ MerchantLabel:
             BuyFromShop("Fall")
         }
     } else {
-        Tooltip, No Merchant Detected
-        SetTimer, ClearTooltip, -1000
-        Sleep, 1000
+        ClickRelative(0.733, 0.45)
+        Sleep, 2500
+        if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
+            Tooltip, Gnome Merchant Detected
+            if AnyItemsSelected("Gnomes") {
+                BuyFromShop("Gnomes")
+            }
+        } else if (PixelColorFound(0x617196, 641, 355, 821, 535, 3)) {
+            Tooltip, Sky Merchant Detected
+            if AnyItemsSelected("Sky") {
+                BuyFromShop("Sky")
+            }
+        } else if (PixelColorFound(0x009CCD, 641, 355, 821, 535, 3)) {
+            Tooltip, Honey Merchant Detected
+            if (AnyItemsSelected("Honey")) {
+                BuyFromShop("Honey")
+            }
+        } else if (PixelColorFound(0x00934C, 641, 355, 821, 535, 3)) {
+            Tooltip, Summer Merchant Detected
+            if (AnyItemsSelected("Summer")) {
+                BuyFromShop("Summer")
+            }
+        } else if (PixelColorFound(0xC5C83F, 641, 355, 821, 535, 3)) {
+            Tooltip, Sprinkler Merchant Detected
+            if (AnyItemsSelected("Sprinklers")) {
+                BuyFromShop("Sprinklers")
+            }
+        } else if (PixelColorFound(0xB67933, 641, 355, 821, 535, 3)) {
+            Tooltip, Fall Merchant 
+            if AnyItemsSelected("Fall") {
+                BuyFromShop("Fall")
+            }
+        } else {
+            Tooltip, No Merchant Detected
+            SetTimer, ClearTooltip, -1000
+            Sleep, 1000
+        }
     }
 Return
