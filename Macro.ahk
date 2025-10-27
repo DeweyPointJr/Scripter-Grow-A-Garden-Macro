@@ -45,7 +45,7 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 
 
 ; ITEMS
-global seeds := ["Carrot", "Strawberry", "Blueberry", "Orange Tulip", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
+global seeds := ["Carrot", "Strawberry", "Blueberry", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
                 , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Great Pumpkin"]
 
@@ -383,6 +383,8 @@ BuyFromShop(shopName) {
         }
         Sleep, 150
     }
+    UINavigation("", 1, 1)
+    Sleep, 1000
     ClickRelative(388, 544, 1)
 
     global RobloxWindow
@@ -405,7 +407,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "HalloweenPart3-1.01" ; <-- Set your current version here
+    currentVersion := "HalloweenPart3-1.02" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")

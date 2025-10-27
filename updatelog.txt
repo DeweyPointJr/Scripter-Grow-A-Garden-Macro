@@ -1,8 +1,9 @@
-Version HalloweenPart3-1.0
+Version HalloweenPart3-1.02
 
-Additions:
- - Added merchants!!
- - Added Pet Lead and Pet Name Reroller
+Changes:
+ - Removed Orange Tulip
+ - Made the shop closing method more secure
 
-Sorry, but the halloween event will not be added to the macro. 
-I will start adding events with the next one.
+Bug Fixes:
+ - Fixed bug where merchant wasn't detecting
+ - Fixed UI navigation not closing with new shop closing method
