@@ -1,9 +1,9 @@
-Version HalloweenPart3-1.02
+Version Safari1.0
+
+Additions:
+ - Added Trinity Fruit
+ - Added Safari Shop
+ - Added Select All/None
 
 Changes:
- - Removed Orange Tulip
- - Made the shop closing method more secure
-
-Bug Fixes:
- - Fixed bug where merchant wasn't detecting
- - Fixed UI navigation not closing with new shop closing method
+ - Improved Merchant Detection

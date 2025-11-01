@@ -11,6 +11,7 @@ global RobloxWindow
 global iniFile := A_ScriptDir "\config.ini"
 
 global AutoAlignCamera
+global UseEventLanterns
 global CurrentShop := ""
 
 global shopKeys := Object()
@@ -23,6 +24,7 @@ shopKeys["Honey"] := "Honey"
 shopKeys["Summer"] := "Summer"
 shopKeys["Sprinklers"] := "Sprinkler"
 shopKeys["Fall"] := "Fall"
+shopKeys["Safari"] := "Safari"
 
 ; === Read from INI ===
 iniFile := "config.ini"
@@ -30,6 +32,10 @@ iniFile := "config.ini"
 IniRead, StartHotkey, %iniFile%, Settings, StartHotkey, F1
 IniRead, PauseHotkey, %iniFile%, Settings, PauseHotkey, F2
 IniRead, StopHotkey, %iniFile%, Settings, StopHotkey, F3
+IniRead, RecallSlot, %iniFile%, Settings, RecallSlot, 2
+IniRead, LanternSlot, %iniFile%, Settings, LanternSlot, 3
+
+IniRead, UseEventLanterns, %iniFile%, Settings, UseEventLanterns, 0
 
 ; === Bind Hotkeys Dynamically ===
 Hotkey, %StartHotkey%, StartHotkeyLabel
@@ -47,7 +53,7 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
-                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Great Pumpkin"]
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Trinity Fruit"]
 
 global gears := ["Watering Can", "Trading Ticket", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Pet Name Reroller", "Pet Lead", "Medium Treat", "Godly Sprinkler", "Magnifying Glass"
                 , "Master Sprinkler", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Grandmaster Sprinkler", "Levelup Lollipop"]
@@ -70,6 +76,8 @@ global seedCraftingOrder := ["None", "Mandrake", "Evo Apple I", "Evo Apple II", 
 
 global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Anti Bee Egg", "Small Toy", "Small Treat", "Pet Pouch", "Pack Bee"]
 
+global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab"]
+
 ; SHOPS
 ; Create global shop objects
 global shops := Object()
@@ -85,6 +93,9 @@ shops["Summer"] := summer
 shops["Sprinklers"] := sprinklers
 shops["Fall"]   := fall
 
+; add event shops
+shops["Safari"] := safari
+
 global shopPrefixes := Object()
 shopPrefixes["Seeds"] := "Seed"
 shopPrefixes["Gears"] := "Gear"
@@ -97,6 +108,9 @@ shopPrefixes["Honey"]  := "Honey"
 shopPrefixes["Summer"] := "Summer"
 shopPrefixes["Sprinklers"] := "Sprinkler"
 shopPrefixes["Fall"]   := "Fall"
+
+; add event prefixes
+shopPrefixes["Safari"] := "Safari"
 
 ; FUNCTIONS
 ClickRelative(relX, relY, coord := 0, noDelay := 0) {
@@ -326,7 +340,9 @@ BuyFromShop(shopName) {
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
     Sleep, 100
     ClickRelative(983, 728, 1)
+    Sleep, 1000
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD", 0, 0)
+    Sleep, 1000
 
     ; Accept either array directly or a string name
     if shops.hasKey(shopName) {
@@ -368,7 +384,7 @@ BuyFromShop(shopName) {
         if (selectedIndexMap.HasKey(index) || selectedIndexMap.HasKey(idx) || selectedNameMap.HasKey(item)) {
             ToolTip, Buying %item%
             noGifting := false
-            if (prefix = "Gear" && idx = 3) || (prefix = "Gear" && idx = 8)  || (prefix = "Gear" && idx = 9) || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey") || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") {
+            if (prefix = "Gear" && idx = 3) || (prefix = "Gear" && idx = 8)  || (prefix = "Gear" && idx = 9) || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey") || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") || (prefix = "Safari") {
                 noGifting := true
             }
             if (noGifting = true) {
@@ -407,7 +423,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "HalloweenPart3-1.02" ; <-- Set your current version here
+    currentVersion := "Safari1.0" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -587,6 +603,11 @@ MainLoop:
         if (AnyItemsSelected("Sky") = 1 || AnyItemsSelected("Gnomes") = 1 || AnyItemsSelected("Honey") = 1 || AnyItemsSelected("Summer") = 1 || AnyItemsSelected("Sprinklers") = 1 || AnyItemsSelected("Fall") = 1) {
             Gosub, MerchantLabel
         }
+
+        ; Check if any safari items are selected
+        if (AnyItemsSelected("Safari") = 1) {
+            Gosub, SafariShopLabel
+        }
     } else {
         MsgBox, Roblox window not found!
     }
@@ -601,7 +622,7 @@ MainGui:
     Gui, New, +Resize, Scripter Macro
 
     ; Title label at the top
-    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [HALLOWEEN]
+    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [SAFARI]
 
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gShopsGui, Shops
@@ -635,7 +656,7 @@ CraftEventsGui:
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gSeedCraftingGui,  Seed Crafting
     Gui, Add, Button, w180 h40 gCraftingGui, Crafting
-    Gui, Add, Button, w180 h40 gEventsGui, Halloween Event
+    Gui, Add, Button, w180 h40 gEventsGui, Safari Event
     Gui, Add, Button, w180 h40 gMainGui, Back
 
     ; Show GUI
@@ -660,178 +681,19 @@ MerchantsGui:
 Return
 
 SeedsGui:
-    global seeds
-    Gui, Destroy
-    Gui, New, +Resize, Seeds Selection
-
-    ; Layout settings
-    xOffset := 10
-    yOffset := 10
-    spacingX := 150    ; horizontal spacing between columns
-    spacingY := 30     ; vertical spacing between rows
-    perColumn := 15    ; number of checkboxes per column
-
-    seedCount := seeds.MaxIndex()
-    if (seedCount = "")
-        seedCount := 0
-
-    for i, seed in seeds {
-        col := Floor((i - 1) / perColumn)
-        row := Mod(i - 1, perColumn)
-
-        xPos := xOffset + (col * spacingX)
-        yPos := yOffset + (row * spacingY)
-
-        IniRead, checked, config.ini, Seeds, Seed%i%, 0
-        Gui, Add, Checkbox, vSeed_%i% x%xPos% y%yPos% w140 h25, %seed%
-        GuiControl,, Seed_%i%, %checked%
-    }
-
-    ; Calculate how many columns and rows we actually have
-    totalCols := Floor((seedCount - 1) / perColumn) + 1
-    totalRows := (seedCount < perColumn) ? seedCount : perColumn
-
-    totalWidth := xOffset + (totalCols * spacingX) + 20
-    totalHeight := yOffset + (totalRows * spacingY) + 50
-
-    ; Center "Done" button nicely below all columns
-    buttonWidth := 100
-    buttonX := (totalWidth - buttonWidth) / 2
-    buttonY := yOffset + (totalRows * spacingY) + 10
-
-    Gui, Add, Button, gSaveSeeds x%buttonX% y%buttonY% w%buttonWidth% h30, Done
-    Gui, Show, w%totalWidth% h%totalHeight%, Seeds Selection
-return
-
-SaveSeeds:
-    global seeds
-    selected := []
-
-    ; Loop through all seeds and get checkbox state
-    for i, seed in seeds {
-        GuiControlGet, checked,, Seed_%i%
-        IniWrite, % checked ? 1 : 0, config.ini, Seeds, Seed%i%
-    }
-
-    ; Return to Main GUI
-    Gosub, MainGui
+    CurrentShop := "Seeds"
+    Gosub, ShowShopGui
 return
 
 GearsGui:
-    global gears
-    Gui, Destroy
-    Gui, New, +Resize, Gears Selection
-
-    ; Layout settings
-    xOffset := 10
-    yOffset := 10
-    spacingX := 150    ; horizontal spacing between columns
-    spacingY := 30     ; vertical spacing between rows
-    perColumn := 15    ; number of checkboxes per column
-
-    gearCount := gears.MaxIndex()
-    if (gearCount   = "")
-        gearCount := 0
-
-    for i, gear in gears {
-        col := Floor((i - 1) / perColumn)
-        row := Mod(i - 1, perColumn)
-
-        xPos := xOffset + (col * spacingX)
-        yPos := yOffset + (row * spacingY)
-
-        IniRead, checked, config.ini, Gears, Gear%i%, 0
-        Gui, Add, Checkbox, vGear_%i% x%xPos% y%yPos% w140 h25, %gear%
-        GuiControl,, Gear_%i%, %checked%
-    }
-
-    ; Calculate how many columns and rows we actually have
-    totalCols := Floor((gearCount - 1) / perColumn) + 1
-    totalRows := (gearCount < perColumn) ? gearCount : perColumn
-
-    totalWidth := xOffset + (totalCols * spacingX) + 20
-    totalHeight := yOffset + (totalRows * spacingY) + 50
-
-    ; Center "Done" button nicely below all columns
-    buttonWidth := 100
-    buttonX := (totalWidth - buttonWidth) / 2
-    buttonY := yOffset + (totalRows * spacingY) + 10
-
-    Gui, Add, Button, gSaveGears x%buttonX% y%buttonY% w%buttonWidth% h30, Done
-    Gui, Show, w%totalWidth% h%totalHeight%, Gears Selection
-return
-
-SaveGears:
-    global gears
-    selected := []
-
-    ; Loop through all seeds and get checkbox state
-    for i, gear in gears {
-        GuiControlGet, checked,, Gear_%i%
-        IniWrite, % checked ? 1 : 0, config.ini, Gears, Gear%i%
-    }
-
-    ; Return to Main GUI
-    Gosub, MainGui
+    CurrentShop := "Gears"
+    Gosub, ShowShopGui
 return
 
 EggsGui:
-    global eggs
-    Gui, Destroy
-    Gui, New, +Resize, Eggs Selection
-
-    ; Layout settings
-    xOffset := 10
-    yOffset := 10
-    spacingX := 150    ; horizontal spacing between columns
-    spacingY := 30     ; vertical spacing between rows
-    perColumn := 15    ; number of checkboxes per column
-
-    eggCount := eggs.MaxIndex()
-    if (eggCount = "")
-        eggCount := 0
-
-    for i, egg in eggs {
-        col := Floor((i - 1) / perColumn)
-        row := Mod(i - 1, perColumn)
-
-        xPos := xOffset + (col * spacingX)
-        yPos := yOffset + (row * spacingY)
-
-        IniRead, checked, config.ini, Eggs, Egg%i%, 0
-        Gui, Add, Checkbox, vEgg_%i% x%xPos% y%yPos% w140 h25, %egg%
-        GuiControl,, Egg_%i%, %checked%
-    }
-
-    ; Calculate how many columns and rows we actually have
-    totalCols := Floor((eggCount - 1) / perColumn) + 1
-    totalRows := (eggCount < perColumn) ? eggCount : perColumn
-
-    totalWidth := xOffset + (totalCols * spacingX) + 20
-    totalHeight := yOffset + (totalRows * spacingY) + 50
-
-    ; Center "Done" button nicely below all columns
-    buttonWidth := 100
-    buttonX := (totalWidth - buttonWidth) / 2
-    buttonY := yOffset + (totalRows * spacingY) + 10
-
-    Gui, Add, Button, gSaveEggs x%buttonX% y%buttonY% w%buttonWidth% h30, Done
-    Gui, Show, w%totalWidth% h%totalHeight%, Eggs Selection
+    CurrentShop := "Eggs"
+    Gosub, ShowShopGui
 Return
-
-SaveEggs:
-    global eggs
-    selected := []
-
-    ; Loop through all seeds and get checkbox state
-    for i, egg in eggs {
-        GuiControlGet, checked,, Egg_%i%
-        IniWrite, % checked ? 1 : 0, config.ini, Eggs, Egg%i%
-    }
-
-    ; Return to Main GUI
-    Gosub, MainGui
-return
 
 SeedCraftingGui:
     global seedCraftingOrder
@@ -980,7 +842,8 @@ SaveCrafting:
 return
 
 EventsGui:
-    MsgBox, Events are temporarily unavailable! Sorry! I will add merchants/events back after the Hallowen event is over.
+    CurrentShop := "Safari"
+    Gosub, ShowShopGui
 Return
 
 SettingsGui:
@@ -992,9 +855,14 @@ SettingsGui:
 
     ; === General Tab ===
     Gui, Add, Text, x20 y50, Auto Align Camera:
-    IniRead, AutoAlignCamera, config.ini, Settings, AutoAlignCamera, 0
+    IniRead, AutoAlignCamera, config.ini, Settings, AutoAlignCamera, 1
     Gui, Add, Checkbox, vAutoAlignCamera x120 y50
     GuiControl,, AutoAlignCamera, %AutoAlignCamera%
+
+    Gui, Add, Text, x20 y75, Use Event Lanterns:
+    IniRead, UseEventLanterns, config.ini, Settings, UseEventLanterns, 0
+    Gui, Add, Checkbox, vUseEventLanterns x120 y75
+    GuiControl,, UseEventLanterns, %UseEventLanterns%
 
 
     ; === Hotkeys Tab ===
@@ -1010,6 +878,14 @@ SettingsGui:
     Gui, Add, Text, x20 y110, Stop Hotkey:
     Gui, Add, Edit, vStopHotkeyEdit x150 y108 w100
     GuiControl,, StopHotkeyEdit, %StopHotkey%
+
+    Gui, Add, Text, x20 y140, Recall Wrench Slot:
+    Gui, Add, Edit, vRecallWrenchSlot x150 y138 w100
+    GuiControl,, RecallWrenchSlot, %RecallSlot%
+
+    Gui, Add, Text, x20 y170, Event Lantern Slot:
+    Gui, Add, Edit, vEventLanternSlot x150 y168 w100
+    GuiControl,, EventLanternSlot, %LanternSlot%
 
 
     ; === Positioning Tab ===
@@ -1027,14 +903,16 @@ SaveSettings:
     Gui, Submit, NoHide
 
     ; Save general to INI
-    IniWrite, %AutoCollectMoney%, config.ini, Settings, AutoCollectMoney
     IniWrite, %AutoAlignCamera%, config.ini, Settings, AutoAlignCamera
-    IniWrite, %AutoHitList%, config.ini, Settings, AutoHitList
+    IniWrite, %UseEventLanterns%, config.ini, Settings, UseEventLanterns
+
 
     ; Save hotkeys to INI
     IniWrite, %StartHotkeyEdit%, config.ini, Settings, StartHotkey
     IniWrite, %PauseHotkeyEdit%, config.ini, Settings, PauseHotkey
     IniWrite, %StopHotkeyEdit%, config.ini, Settings, StopHotkey
+    IniWrite, %RecallWrenchSlot%, config.ini, Settings, RecallSlot
+    IniWrite, %EventLanternSlot%, config.ini, Settings, LanternSlot
 
     Reload ; hotkey changes take effect
 Return
@@ -1107,13 +985,13 @@ Return
 
 GearShopLabel:
     Tooltip, Buying Gears
-    Send, {2}
+    Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5)
     Sleep, 1000
     Send, {e}
     Sleep, 5000
-    if PixelColorFound(0xD06839, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x53AB3A, 603, 236, 1338, 299, 10) {
         ToolTip, Gear Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1132,7 +1010,7 @@ Return
 
 EggShopLabel:
     Tooltip, Buying Eggs
-    Send, {2}
+    Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5)
     Sleep, 1000
@@ -1141,7 +1019,7 @@ EggShopLabel:
     Send, {w up}
     Send, {e}
     Sleep, 2000
-    ClickRelative(1576, 390, 1)
+    ClickRelative(1576, 452, 1)
     Sleep, 3000
     if PixelColorFound(0xFD942E, 603, 236, 1338, 299, 10) {
         ToolTip, Egg Shop Opened
@@ -1231,7 +1109,7 @@ SeedCraftingLabel(item) {
     ; Now start the actual crafting
     Tooltip, Crafting %item%
     SetTimer, ClearTooltip, -1500
-    Send, {2}
+    Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5, 0)
     Sleep, 1000
@@ -1296,7 +1174,7 @@ CraftingLabel(item) {
     ; Now start the actual crafting
     Tooltip, Crafting %item%
     SetTimer, ClearTooltip, -1500
-    Send, {2}
+    Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5, 0)
     Sleep, 1000
@@ -1382,14 +1260,12 @@ ShowShopGui:
     global shopKeys, shopPrefixes, shops, CurrentShop, iniFile
 
     shopName := CurrentShop
-
-    ; Safety check: don't proceed if shopName is empty
     if (shopName = "" || !shops.HasKey(shopName)) {
         MsgBox, 48, Error, ShowShopGui called with invalid shop name: "%shopName%"
         return
     }
 
-    capitalized := shopName  ; your shopKeys already use capitalized names
+    capitalized := shopName
     keyPrefix := shopKeys[capitalized]
     if (keyPrefix = "") {
         MsgBox, 48, Error, No key mapping found for shop "%capitalized%"
@@ -1401,7 +1277,6 @@ ShowShopGui:
     Gui, Destroy
     Gui, New, +Resize, %capitalized% Selection
 
-    ; Layout settings
     xOffset := 10
     yOffset := 10
     spacingX := 150
@@ -1420,7 +1295,6 @@ ShowShopGui:
         yPos := yOffset + (row * spacingY)
 
         IniRead, checked, %iniFile%, %capitalized%, %keyPrefix%%i%, 0
-        global ctrlName
         ctrlName := keyPrefix . "_" . i
         Gui, Add, Checkbox, v%ctrlName% x%xPos% y%yPos% w140 h25, %item%
         GuiControl,, %ctrlName%, %checked%
@@ -1429,16 +1303,62 @@ ShowShopGui:
     ; Calculate GUI size
     totalCols := Floor((Count - 1) / perColumn) + 1
     totalRows := (Count < perColumn) ? Count : perColumn
-    totalWidth := xOffset + (totalCols * spacingX) + 20
-    totalHeight := yOffset + (totalRows * spacingY) + 50
+    buttonWidth := 100
+    buttonSpacing := 20
+    buttonsTotalWidth := (buttonWidth * 2) + buttonSpacing
+    minWidthForButtons := buttonsTotalWidth + 40  ; extra padding
+    calculatedWidth := xOffset + (totalCols * spacingX) + 20
+    totalWidth := (calculatedWidth < minWidthForButtons) ? minWidthForButtons : calculatedWidth
+    totalHeight := yOffset + (totalRows * spacingY) + 60
+
+    ; Center buttons horizontally
+    buttonsTotalWidth := (buttonWidth * 2) + buttonSpacing
+    buttonsStartX := (totalWidth - buttonsTotalWidth) / 2
+    buttonY := yOffset + (totalRows * spacingY) + 10
+
+    ; Select All/None button
+    Gui, Add, Button, x%buttonsStartX% y%buttonY% w%buttonWidth% h30 gToggleSelectAll vSelectAllButton, Select All
 
     ; Done button
-    buttonWidth := 100
-    buttonX := (totalWidth - buttonWidth) / 2
-    buttonY := yOffset + (totalRows * spacingY) + 10
-    Gui, Add, Button, x%buttonX% y%buttonY% w%buttonWidth% h30 gDynamicDone, Done
+    doneX := buttonsStartX + buttonWidth + buttonSpacing
+    Gui, Add, Button, x%doneX% y%buttonY% w%buttonWidth% h30 gDynamicDone, Done
 
+    ; Determine initial Select All/None button label
+    allInitiallyChecked := true
+    Loop, % Count {
+        ctrlName := keyPrefix . "_" . A_Index
+        GuiControlGet, state, , %ctrlName%
+        if (!state) {
+            allInitiallyChecked := false
+            break
+        }
+    }
+    initialLabel := allInitiallyChecked ? "Select None" : "Select All"
+    GuiControl,, SelectAllButton, %initialLabel%
+    
+    ; Show GUI after setting correct button label
     Gui, Show, w%totalWidth% h%totalHeight%, %capitalized% Selection
+Return
+
+ToggleSelectAll:
+    allChecked := true
+    Loop, % Count {
+        ctrlName := keyPrefix . "_" . A_Index
+        GuiControlGet, state, , %ctrlName%
+        if (!state) {
+            allChecked := false
+            break
+        }
+    }
+
+    newState := allChecked ? 0 : 1
+    Loop, % Count {
+        ctrlName := keyPrefix . "_" . A_Index
+        GuiControl,, %ctrlName%, %newState%
+    }
+
+    newLabel := allChecked ? "Select All" : "Select None"
+    GuiControl,, SelectAllButton, %newLabel%
 Return
 
 MerchantLabel:
@@ -1454,39 +1374,8 @@ MerchantLabel:
     Sleep, 2000
     
 
-    if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
-        Tooltip, Gnome Merchant Detected
-        if AnyItemsSelected("Gnomes") {
-            BuyFromShop("Gnomes")
-        }
-    } else if (PixelColorFound(0x617196, 641, 355, 821, 535, 3)) {
-        Tooltip, Sky Merchant Detected
-        if AnyItemsSelected("Sky") {
-            BuyFromShop("Sky")
-        }
-    } else if (PixelColorFound(0x009CCD, 641, 355, 821, 535, 3)) {
-        Tooltip, Honey Merchant Detected
-        if (AnyItemsSelected("Honey")) {
-            BuyFromShop("Honey")
-        }
-    } else if (PixelColorFound(0x00934C, 641, 355, 821, 535, 3)) {
-        Tooltip, Summer Merchant Detected
-        if (AnyItemsSelected("Summer")) {
-            BuyFromShop("Summer")
-        }
-    } else if (PixelColorFound(0xC5C83F, 641, 355, 821, 535, 3)) {
-        Tooltip, Sprinkler Merchant Detected
-        if (AnyItemsSelected("Sprinklers")) {
-            BuyFromShop("Sprinklers")
-        }
-    } else if (PixelColorFound(0xB67933, 641, 355, 821, 535, 3)) {
-        Tooltip, Fall Merchant 
-        if AnyItemsSelected("Fall") {
-            BuyFromShop("Fall")
-        }
-    } else {
-        ClickRelative(0.733, 0.45)
-        Sleep, 2500
+    if PixelColorFound(0x11B3F9, 603, 236, 1338, 299, 10) {
+        Tooltip, Merchant Opened. Detecting which merchant
         if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
             Tooltip, Gnome Merchant Detected
             if AnyItemsSelected("Gnomes") {
@@ -1512,7 +1401,42 @@ MerchantLabel:
             if (AnyItemsSelected("Sprinklers")) {
                 BuyFromShop("Sprinklers")
             }
-        } else if (PixelColorFound(0xB67933, 641, 355, 821, 535, 3)) {
+        } else if (PixelColorFound(0xB37B21, 641, 355, 821, 535, 3)) {
+            Tooltip, Fall Merchant 
+            if AnyItemsSelected("Fall") {
+                BuyFromShop("Fall")
+            }
+        }
+    } else {
+        ClickRelative(0.733, 0.45)
+        Sleep, 2500
+        if PixelColorFound(0x11B3F9, 603, 236, 1338, 299, 10) {
+            if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
+            Tooltip, Gnome Merchant Detected
+            if AnyItemsSelected("Gnomes") {
+                BuyFromShop("Gnomes")
+            }
+        } else if (PixelColorFound(0x617196, 641, 355, 821, 535, 3)) {
+            Tooltip, Sky Merchant Detected
+            if AnyItemsSelected("Sky") {
+                BuyFromShop("Sky")
+            }
+        } else if (PixelColorFound(0x009CCD, 641, 355, 821, 535, 3)) {
+            Tooltip, Honey Merchant Detected
+            if (AnyItemsSelected("Honey")) {
+                BuyFromShop("Honey")
+            }
+        } else if (PixelColorFound(0x00934C, 641, 355, 821, 535, 3)) {
+            Tooltip, Summer Merchant Detected
+            if (AnyItemsSelected("Summer")) {
+                BuyFromShop("Summer")
+            }
+        } else if (PixelColorFound(0xC5C83F, 641, 355, 821, 535, 3)) {
+            Tooltip, Sprinkler Merchant Detected
+            if (AnyItemsSelected("Sprinklers")) {
+                BuyFromShop("Sprinklers")
+            }
+        } else if (PixelColorFound(0xB37B21, 641, 355, 821, 535, 3)) {
             Tooltip, Fall Merchant 
             if AnyItemsSelected("Fall") {
                 BuyFromShop("Fall")
@@ -1522,5 +1446,59 @@ MerchantLabel:
             SetTimer, ClearTooltip, -1000
             Sleep, 1000
         }
+        }
+        
+    }
+
+    
+    
+Return
+
+SafariShopLabel:
+    Tooltip, Going to Safari Shop
+    SetTimer, ClearTooltip, -1500
+    if (UseEventLanterns = 1) {
+        Send, {%LanternSlot%}
+        Sleep, 1000
+        ClickRelative(0.5, 0.5)
+        Sleep, 1000
+        Send, {a down}
+        Sleep, 1500
+        Send, {a up}
+        Sleep, 100
+        Send, {s down}
+        Sleep, 500
+        Send, {s up}
+        Sleep, 1000
+    } else {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+        Sleep, 1000
+        Send, {d down}
+        Sleep, 8300
+        Send, {d up}
+        Sleep, 100
+        Send, {s down}
+        Sleep, 1000
+        Send, {s up}
+        Sleep, 1000
+    }
+
+    ; Open the shop
+    Send, {E}
+    Sleep, 2500
+    if PixelColorFound(0x53C705, 603, 236, 1338, 299, 10) {
+        ToolTip, Safari Shop Opened
+        SetTimer, ClearTooltip, -1500
+        Sleep, 1000
+        BuyFromShop("Safari")
+        Tooltip, Safari Completed
+        Sleep, 1000
+        Gosub, ClearTooltip
+        Sleep, 1000
+        ClickRelative(1298, 264, 1)
+        Sleep, 1000
+        CloseRobuxPrompt()
+    } else {
+        Tooltip, ERROR: Safari Shop Not Opening
     }
 Return
