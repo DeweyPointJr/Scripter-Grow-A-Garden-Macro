@@ -423,7 +423,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "Safari1.0" ; <-- Set your current version here
+    currentVersion := "Safari1.01" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1021,7 +1021,7 @@ EggShopLabel:
     Sleep, 2000
     ClickRelative(1576, 452, 1)
     Sleep, 3000
-    if PixelColorFound(0xFD942E, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x53AB3A, 603, 236, 1338, 299, 10) {
         ToolTip, Egg Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000

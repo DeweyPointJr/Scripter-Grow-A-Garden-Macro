@@ -1,4 +1,4 @@
-Version Safari1.0
+Version Safari1.01
 
 Additions:
  - Added Trinity Fruit
@@ -7,3 +7,6 @@ Additions:
 
 Changes:
  - Improved Merchant Detection
+
+Version 1.01 Changes:
+ - Fixed egg shop detection
