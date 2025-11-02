@@ -1,12 +1,6 @@
-Version Safari1.01
+Version Safari1.02
 
 Additions:
- - Added Trinity Fruit
- - Added Safari Shop
- - Added Select All/None
-
-Changes:
- - Improved Merchant Detection
-
-Version 1.01 Changes:
- - Fixed egg shop detection
+ - Added Buttercup
+ - Made camera changing WAY MORE SECURE
+ - Added AUTO RECONNECT!!

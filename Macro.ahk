@@ -42,6 +42,12 @@ Hotkey, %StartHotkey%, StartHotkeyLabel
 Hotkey, %PauseHotkey%, PauseHotkeyLabel
 Hotkey, %StopHotkey%, StopHotkeyLabel
 
+; === Reconnect ===
+global VIP_SERVER_LINK
+global AutoReconnect
+IniRead, VIP_SERVER_LINK, %iniFile%, Settings, VipServerLink
+INiRead, AutoReconnect, %iniFile%, Settings, AutoReconnect
+
 ; === Positiniong ===
 global backpackBtnX
 global backpackBtnY
@@ -51,7 +57,7 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 
 
 ; ITEMS
-global seeds := ["Carrot", "Strawberry", "Blueberry", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
+global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
                 , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Trinity Fruit"]
 
@@ -171,9 +177,139 @@ ClickRelative(relX, relY, coord := 0, noDelay := 0) {
     SendMode %oldMode%
 }
 
+CheckCameraMode() {
+    global RobloxWindow
+    WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
 
+    Send, {Esc}
+    Sleep, 1000
+    Send, {Tab}
+    Sleep, 500
+    Send, {Down}
 
+    baseDir = A_ScriptDir . Images
+    CoordMode, Pixel, Window
+    CoordMode, Mouse, Window
 
+    Loop, 4 {
+        imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
+        Tooltip, Checking: Camera%A_Index%
+        ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
+        if (ErrorLevel = 0) {
+            Tooltip, Match found: Camera%A_Index%
+            return A_Index
+        }
+        Sleep, 1000
+    }
+    Tooltip, No match found
+    return 0  ; No match found
+}
+
+SetCameraMode(number) {
+    if (number > 4)
+        number := 4
+
+    mode := CheckCameraMode()
+    if (mode) {
+        distance := mode - number
+        if (distance > 0) {
+            Loop, %distance% {
+                Send, {Left}
+                Sleep, 100
+            }
+        } else if (distance < 0) {
+            Loop, % Abs(distance) {
+                Send, {Right}
+                Sleep, 100
+            }
+        }
+        Sleep, 1000
+    }
+    Send, {Esc}
+    Sleep, 1000
+    Return
+}
+
+CheckRobloxStatusFunc() {
+    
+    ; Check if the disconnected text exists
+    global RobloxWindow
+    WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
+
+    imagePath := A_ScriptDir . "\Images\Disconnected.png"
+    ImageSearch, FoundX, FoundY, (((X+702)/1936)*W), (((Y+361)/1056)*H), (((X+1224)/1936)*W), (((Y+718)/1056)*H), *80 %imagePath%
+    if (ErrorLevel = 0) {
+        ReconnectToGame()
+        return
+    }
+    
+    ; Check for error windows
+    try {
+        if (WinExist("ahk_class #32770 ahk_exe RobloxPlayerBeta.exe")) {
+            errorText := WinGetText, ahk_class #32770 ahk_exe RobloxPlayerBeta.exe
+            if (InStr(errorText, "disconnected") || InStr(errorText, "lost connection") || InStr(errorText, "error") || InStr(errorText, "Disconnected")) {
+                Tooltip, ⚠ Connection error detected. Reconnecting...
+                WinClose, ahk_class #32770 ahk_exe RobloxPlayerBeta.exe
+                Sleep, 1000
+                ReconnectToGame()
+                return
+            }
+        }
+        
+        ; Check Roblox window titles
+        robloxWindows := WinGetList, ahk_exe RobloxPlayerBeta.exe
+        for hwnd in robloxWindows {
+            try {
+                windowTitle := WinGetTitle, "ahk_id " . hwnd
+                if (InStr(windowTitle, "Disconnected") || InStr(windowTitle, "Lost connection") || InStr(windowTitle, "Error")) {
+                    Tooltip, ⚠ Game disconnection detected. Reconnecting...
+                    ReconnectToGame()
+                    return
+                }
+            }
+        }
+    }
+}
+
+ReconnectToGame() {
+    global VIP_SERVER_LINK, RECONNECT_DELAY
+    if (VIP_SERVER_LINK = "") {
+        Tooltip, ❌ Cannot reconnect: No VIP Server link
+        return
+    }
+    
+    Tooltip, 🔄 Starting reconnection process...
+    
+    ; Close all Roblox processes
+    try {
+        WinClose, Roblox
+        Sleep, 1000
+        WinClose, Roblox
+        Tooltip, ⏳ Roblox closed. Waiting...
+        Sleep, 2000
+        
+        ; Wait before reopening
+        Sleep, %RECONNECT_DELAY%
+        
+        ; Open VIP Server link
+        Tooltip, 🚀 Opening Roblox...
+        Run, %VIP_SERVER_LINK%
+        
+        ; Wait for Roblox to open
+        Loop 30 {
+            global RobloxWindow
+            if (WinExist("Roblox")) {
+                Tooltip, ✅ Roblox opened successfully. Loading game...
+                WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+                Sleep, 15000  ; Wait for game to load
+                Tooltip, 🎮 Successfully joined game!
+                ClickRelative(0.5, 0.5)
+                break
+            }
+            Sleep, 1000
+        }
+    }
+}
 
 
 UINavigation(command, uialreadyopen := 0, closeUi := 1, delay := 100) {
@@ -423,7 +559,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "Safari1.01" ; <-- Set your current version here
+    currentVersion := "Safari1.1" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -514,6 +650,12 @@ MainLoop:
         WinActivate, ahk_id %RobloxWindow%
 
         ; Roblox is active. Start main macro actions.
+
+        ; Check for reconnect
+        global AutoReconnect
+        if (AutoReconnect) {
+            CheckRobloxStatusFunc()
+        }
 
         ; Make sure camera is aligned correctly
         Gosub, AutoAlignCameraLabel
@@ -851,7 +993,7 @@ SettingsGui:
     Gui, New, +Resize, Settings
 
     ; Create tab control
-    Gui, Add, Tab2, x10 y10 w280 h200, General|Hotkeys|Positioning
+    Gui, Add, Tab2, x10 y10 w280 h200, General|Hotkeys|Positioning|Reconnect
 
     ; === General Tab ===
     Gui, Add, Text, x20 y50, Auto Align Camera:
@@ -892,6 +1034,17 @@ SettingsGui:
     Gui, Tab, 3
     Gui, Add, Button, x20 y50 w100 h35 gSetBackpackPos, Set Backpack Button Position
 
+    ; === Reconnect Tab ===
+    Gui, Tab, 4
+    Gui, Add, Text, x20 y40 w150, VIP Server Link:
+    Gui, Add, Edit, x20 y60 w200 h20 vVipLink, %VIP_SERVER_LINK%
+    Gui, Add, Text, x20 y90 w120, Auto Reconnect:
+    Gui, Add, Checkbox, x110 y92 vAutoReconnect
+    GuiControl,, AutoReconnect, %AutoReconnect%
+    Gui, Add, Button, gReconnectToGame x20 y110 w80 h30, Test Reconnect
+
+    Gui, Add, Text, x20 y160, Credit to INNIE for the original reconnect script!
+
     ; === Save Button ===
     Gui, Tab  ; Ends tab section
     Gui, Add, Button, gSaveSettings x100 y220 w100 h30, Save
@@ -913,6 +1066,10 @@ SaveSettings:
     IniWrite, %StopHotkeyEdit%, config.ini, Settings, StopHotkey
     IniWrite, %RecallWrenchSlot%, config.ini, Settings, RecallSlot
     IniWrite, %EventLanternSlot%, config.ini, Settings, LanternSlot
+
+    ; Save Reconnect Settings
+    IniWrite, %VipLink%, config.ini, Settings, VipServerLink
+    IniWrite, %AutoReconnect%, config.ini, Settings, AutoReconnect
 
     Reload ; hotkey changes take effect
 Return
@@ -1064,35 +1221,13 @@ AutoAlignCameraLabel:
     ; Last align the camera through the shops
     IniRead, AutoAlignCamera, config.ini, Settings, AutoAlignCamera
     if (AutoAlignCamera) {
-        Send, {Esc}
-        Sleep, 1000
-        Send, {Tab}
-        Sleep, 1000
-        Send, {Down}
-        Sleep, 100
-        Send, {Right}
-        Sleep, 100
-        Send, {Right}
-        Sleep, 1000
-        Send, {Esc}
-        Sleep, 1000
+        SetCameraMode(3)
 
         ; Teleport to shops
         UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
         Sleep, 1000
         ; Chance camera back
-        Send, {Esc}
-        Sleep, 1000
-        Send, {Tab}
-        Sleep, 1000
-        Send, {Down}
-        Sleep, 100
-        Send, {Right}
-        Sleep, 100
-        Send, {Right}
-        Sleep, 1000
-        Send, {Esc}
-        Sleep, 1000
+        SetCameraMode(1)
     }
 
 Return
