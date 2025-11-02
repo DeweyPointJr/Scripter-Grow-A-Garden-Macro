@@ -1,6 +1,10 @@
-Version Safari1.02
+Version Safari1.2
 
 Additions:
  - Added Buttercup
  - Made camera changing WAY MORE SECURE
  - Added AUTO RECONNECT!!
+ - Added Pass shop
+
+Bug Fixes:
+ - Fixed always buying the first item, even if its not selected

@@ -25,6 +25,7 @@ shopKeys["Summer"] := "Summer"
 shopKeys["Sprinklers"] := "Sprinkler"
 shopKeys["Fall"] := "Fall"
 shopKeys["Safari"] := "Safari"
+shopKeys["Pass"] := "Pass"
 
 ; === Read from INI ===
 iniFile := "config.ini"
@@ -84,6 +85,8 @@ global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer",
 
 global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab"]
 
+global pass := ["Zenith Crate", "Mossy Rock", "Silver Fertilizer", "Zenith Seed Pack", "Levelup Lollipop", "Grow All", "Wyrmvine"]
+
 ; SHOPS
 ; Create global shop objects
 global shops := Object()
@@ -101,6 +104,7 @@ shops["Fall"]   := fall
 
 ; add event shops
 shops["Safari"] := safari
+shops["Pass"] := pass
 
 global shopPrefixes := Object()
 shopPrefixes["Seeds"] := "Seed"
@@ -117,6 +121,7 @@ shopPrefixes["Fall"]   := "Fall"
 
 ; add event prefixes
 shopPrefixes["Safari"] := "Safari"
+shopPrefixes["Pass"] := "Pass"
 
 ; FUNCTIONS
 ClickRelative(relX, relY, coord := 0, noDelay := 0) {
@@ -299,6 +304,7 @@ ReconnectToGame() {
         Loop 30 {
             global RobloxWindow
             if (WinExist("Roblox")) {
+                WinMaximize, Roblox
                 Tooltip, ✅ Roblox opened successfully. Loading game...
                 WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
                 Sleep, 15000  ; Wait for game to load
@@ -464,15 +470,15 @@ AnyItemsSelected(shopName) {
 
 BuyFromShop(shopName) {
     global doubleScrolls, itemPositions, seeds, gears, iniFile, ahopa
-
     global RobloxWindow
+
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
     if !RobloxWindow {
         MsgBox, Roblox window not found!
         return
     }
 
-    ; First use UI navigation to get to the first item
+    ; Navigate to the first item in the shop
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
     Sleep, 100
     ClickRelative(983, 728, 1)
@@ -480,14 +486,17 @@ BuyFromShop(shopName) {
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD", 0, 0)
     Sleep, 1000
 
-    ; Accept either array directly or a string name
+    ; Get shop items and prefix
     if shops.hasKey(shopName) {
         shopItems := shops[shopName]
         section := shopName
         prefix := shopPrefixes[shopName]
+    } else {
+        MsgBox, Shop name not found: %shopName%
+        return
     }
 
-    ; Find all selected items (read directly from config.ini)
+    ; Read selected items from INI
     selectedItems := []
     for i, item in shopItems {
         IniRead, checked, %iniFile%, %section%, %prefix%%i%, 0
@@ -496,55 +505,60 @@ BuyFromShop(shopName) {
         }
     }
 
-    ; Build fast lookup maps
-    selectedIndexMap := {}
+    ; Build name-based lookup map
     selectedNameMap := {}
-    for k, v in selectedItems {
-        selectedIndexMap[k] := true
-        selectedIndexMap[v] := true
-        selectedNameMap[k] := true
-        selectedNameMap[v] := true
+    for _, item in selectedItems {
+        selectedNameMap[item] := true
     }
 
     ; Loop through shop items
     for index, item in shopItems {
         idx := index + 0
 
-        ; Skip scrolling for the first item
+        ; Scroll down if not the first item
         if (idx != 1) {
             Send, {Down}
             Sleep, 500
         }
 
-        ; If selected, click its position
-        if (selectedIndexMap.HasKey(index) || selectedIndexMap.HasKey(idx) || selectedNameMap.HasKey(item)) {
+        ; Only buy if item is selected
+        if selectedNameMap.HasKey(item) {
             ToolTip, Buying %item%
             noGifting := false
-            if (prefix = "Gear" && idx = 3) || (prefix = "Gear" && idx = 8)  || (prefix = "Gear" && idx = 9) || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey") || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") || (prefix = "Safari") {
+            if (prefix = "Gear" && idx = 3) || (prefix = "Gear" && idx = 8) || (prefix = "Gear" && idx = 9)
+                || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey")
+                || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler")
+                || (prefix = "Safari") {
                 noGifting := true
             }
-            if (noGifting = true) {
+
+            if (noGifting) {
                 UINavigation("E|||||D", 1, 0)
             } else {
                 UINavigation("E|||||DL", 1, 0)
             }
+
             Sleep, 100
             if PixelColorFound(0x1DB31D, 598, 313, 1311, 875, 0) {
                 UINavigation("EEEEEEEEEE", 1, 0)
             }
         }
+
         Sleep, 150
     }
+
+    ; Exit shop
     UINavigation("", 1, 1)
     Sleep, 1000
     ClickRelative(388, 544, 1)
 
-    global RobloxWindow
+    ; Confirm Roblox window still exists
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
     if !RobloxWindow {
         MsgBox, Roblox window not found!
         return
     }
+
     Sleep, 1000
     ClickRelative(0.5, 0.5)
     Sleep, 1000
@@ -559,7 +573,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "Safari1.1" ; <-- Set your current version here
+    currentVersion := "Safari1.2" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -750,6 +764,11 @@ MainLoop:
         if (AnyItemsSelected("Safari") = 1) {
             Gosub, SafariShopLabel
         }
+
+        ; Check if any season pass items are selected
+        if (AnyItemsSelected("Pass") = 1) {
+            Gosub, PassShopLabel
+        }
     } else {
         MsgBox, Roblox window not found!
     }
@@ -799,6 +818,7 @@ CraftEventsGui:
     Gui, Add, Button, w180 h40 gSeedCraftingGui,  Seed Crafting
     Gui, Add, Button, w180 h40 gCraftingGui, Crafting
     Gui, Add, Button, w180 h40 gEventsGui, Safari Event
+    Gui, Add, Button, w180 h40 gPassGui, Pass Shop
     Gui, Add, Button, w180 h40 gMainGui, Back
 
     ; Show GUI
@@ -966,6 +986,11 @@ Return
 
 FallGui:
     CurrentShop := "Fall"
+    Gosub, ShowShopGui
+Return
+
+PassGui:
+    CurrentShop := "Pass"
     Gosub, ShowShopGui
 Return
 
@@ -1636,4 +1661,89 @@ SafariShopLabel:
     } else {
         Tooltip, ERROR: Safari Shop Not Opening
     }
+Return
+
+PassShopLabel:
+    Tooltip, Buying from Pass Shop
+    SetTimer, ClearTooltip, -1500
+    
+    global doubleScrolls, itemPositions, seeds, gears, iniFile, ahopa
+
+    global RobloxWindow
+    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+    if !RobloxWindow {
+        MsgBox, Roblox window not found!
+        return
+    }
+
+    ; First use UI navigation to get to the first item
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLDEUUUUUUUUUUUUUUUURRRRDRREDDD")
+    Sleep, 100
+    ClickRelative(1211, 850, 1)
+    Sleep, 1000
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDDUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDD", 0, 0)
+    Sleep, 1000
+
+    ; Accept either array directly or a string name
+    shopItems := pass
+    section := "Pass"
+    prefix := "Pass"
+
+    ; Find all selected items (read directly from config.ini)
+    selectedItems := []
+    for i, item in shopItems {
+        IniRead, checked, %iniFile%, %section%, %prefix%%i%, 0
+        if (checked = "1" || checked = 1) {
+            selectedItems.Push(item)
+        }
+    }
+
+    ; Build name-based lookup map
+    selectedNameMap := {}
+    for _, item in selectedItems {
+        selectedNameMap[item] := true
+    }
+
+    ; Loop through shop items
+    for index, item in shopItems {
+        idx := index + 0
+
+        ; Skip scrolling for the first item
+        if (idx != 1) {
+            UINavigation("D", 1, 0)
+            Sleep, 500
+        }
+
+        ; If selected, click its position
+        if selectedNameMap.HasKey(item) {
+            ToolTip, Buying %item%
+            noGifting := false
+            if (prefix = "Pass") {
+                noGifting := true
+            }
+            if (noGifting = true) {
+                UINavigation("E|||||D", 1, 0)
+            } else {
+                UINavigation("E|||||DL", 1, 0)
+            }
+            Sleep, 100
+            if PixelColorFound(0x1DB31D, 778, 378, 1557, 882, 0) {
+                UINavigation("EEEEEEEEEE", 1, 0)
+            }
+        }
+        Sleep, 150
+    }
+    UINavigation("", 1, 1)
+    Sleep, 1000
+    ClickRelative(1722, 544, 1)
+
+    global RobloxWindow
+    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+    if !RobloxWindow {
+        MsgBox, Roblox window not found!
+        return
+    }
+    Sleep, 1000
+    ClickRelative(0.5, 0.5)
+    Sleep, 1000
 Return
