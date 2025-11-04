@@ -83,7 +83,7 @@ global seedCraftingOrder := ["None", "Mandrake", "Evo Apple I", "Evo Apple II", 
 
 global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Anti Bee Egg", "Small Toy", "Small Treat", "Pet Pouch", "Pack Bee"]
 
-global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab"]
+global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab", "Pet Shard JUMBO"]
 
 global pass := ["Zenith Crate", "Mossy Rock", "Silver Fertilizer", "Zenith Seed Pack", "Levelup Lollipop", "Grow All", "Wyrmvine"]
 
