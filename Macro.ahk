@@ -573,7 +573,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "Safari1.2" ; <-- Set your current version here
+    currentVersion := "Safari1.21" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
