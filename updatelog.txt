@@ -1,4 +1,4 @@
-Version MegaSafari1.0
+Version MegaSafari1.01
 
 Additions:
  - Added new Safari shop items
@@ -11,3 +11,6 @@ Bug Fixes:
  - Fixed gear shop order
  - Fixed gear, egg, and crafting detection
  - Fixed macro thinking it reconnected when "Connection Failed" pops up
+
+V1.01 Changes:
+ - Added Navigation Settings Start

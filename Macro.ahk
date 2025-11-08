@@ -36,6 +36,7 @@ IniRead, PauseHotkey, %iniFile%, Settings, PauseHotkey, F2
 IniRead, StopHotkey, %iniFile%, Settings, StopHotkey, F3
 IniRead, RecallSlot, %iniFile%, Settings, RecallSlot, 2
 IniRead, LanternSlot, %iniFile%, Settings, LanternSlot, 3
+IniRead, SettingsStart, %iniFile%, Settings, SettingsStart, 0
 
 IniRead, UseEventLanterns, %iniFile%, Settings, UseEventLanterns, 0
 IniRead, AutoCollectPlants, %iniFile%, Settings, AutoCollectPlants, 0
@@ -375,6 +376,11 @@ UINavigation(command, uialreadyopen := 0, closeUi := 1, delay := 100) {
     if (!uialreadyopen) {
         Send, {sc02B}  ; sc02B is the scancode for the backslash key ("\")
         Sleep, %delay%
+    }
+
+    ; Navigate to hotbar if settings start
+    if (SettingsStart) {
+        UINavigation("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD", 1, 0)
     }
 
     ; Loop through each character in the command string
@@ -1108,6 +1114,11 @@ SettingsGui:
     Gui, Add, Checkbox, vAutoSellPlants x120 y100
     GuiControl,, AutoSellPlants, %AutoSellPlants%
 
+    Gui, Add, Text, x20 y150, Navigation Settings Start:
+    IniRead, SettingsStart, config.ini, Settings, SettingsStart, 0
+    Gui, Add, Checkbox, vSettingsStart x150 y150
+    GuiControl,, SettingsStart, %SettingsStart%
+
 
     ; === Hotkeys Tab ===
     Gui, Tab, 2
@@ -1165,6 +1176,7 @@ SaveSettings:
     IniWrite, %UseEventLanterns%, config.ini, Settings, UseEventLanterns
     IniWrite, %AutoCollectPlants%, config.ini, Settings, AutoCollectPlants
     IniWrite, %AutoSellPlants%, config.ini, Settings, AutoSellPlants
+    IniWrite, %SettingsStart%, config.ini, Settings, SettingsStart
 
 
     ; Save hotkeys to INI
