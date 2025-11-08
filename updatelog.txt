@@ -9,8 +9,9 @@ Additions:
 Bug Fixes:
  - Fixed not detecting camera mode properly
  - Fixed gear shop order
- - Fixed gear, egg, and crafting detection
  - Fixed macro thinking it reconnected when "Connection Failed" pops up
 
 V1.01 Changes:
  - Added Navigation Settings Start
+ - Fixed gear, egg, and crafting detection
+ - Fixed map side detection.

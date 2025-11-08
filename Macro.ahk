@@ -489,6 +489,52 @@ PixelColorFound(color, x1, y1, x2, y2, variation := 0) {
         return 0
 }
 
+ImageDetect(imageName, x1, y1, x2, y2, variation = 0) {
+    ; === Setup ===
+    baseDir := A_ScriptDir . "\Images\"
+    imagePath := baseDir . imageName
+
+    ; Reference resolution (your base)
+    refW := 1936
+    refH := 1056
+
+    ; Get Roblox window position & size
+    WinGetPos, X, Y, W, H, Roblox
+    if (ErrorLevel) {
+        Tooltip, Roblox window not found!
+        Sleep, 1500
+        Tooltip
+        return 0
+    }
+
+    CoordMode, Pixel, Window
+    CoordMode, Mouse, Window
+
+    ; === Try up to 4 times ===
+    Loop, 4 {
+
+        ; Scale coordinates relative to Roblox window
+        x1s := X + ((x1 / refW) * W)
+        y1s := Y + ((y1 / refH) * H)
+        x2s := X + ((x2 / refW) * W)
+        y2s := Y + ((y2 / refH) * H)
+
+        ; Search within Roblox window
+        ImageSearch, FoundX, FoundY, %x1s%, %y1s%, %x2s%, %y2s%, *%variation% %imagePath%
+
+        if (ErrorLevel = 0) {
+            Sleep, 500
+            Tooltip
+            return 1
+        }
+        Sleep, 1000
+    }
+
+    Sleep, 1000
+    Tooltip
+    return 0
+}
+
 capitalizeFirst(text) {
     firstChar := SubStr(text, 1, 1)
     StringUpper, firstChar, firstChar, T
@@ -609,6 +655,7 @@ BuyFromShop(shopName) {
     UINavigation("", 1, 1)
     Sleep, 1000
     ClickRelative(388, 544, 1)
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRE")
 
     ; Confirm Roblox window still exists
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
@@ -631,7 +678,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "MegaSafari1.0" ; <-- Set your current version here
+    currentVersion := "MegaSafari1.01" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1268,7 +1315,7 @@ GearShopLabel:
     Sleep, 1000
     Send, {e}
     Sleep, 5000
-    if PixelColorFound(0x52C981, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x5289C1, 603, 236, 1338, 299, 10) {
         ToolTip, Gear Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1298,7 +1345,7 @@ EggShopLabel:
     Sleep, 2000
     ClickRelative(1576, 452, 1)
     Sleep, 3000
-    if PixelColorFound(0x51AF90, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0xB0AE8E, 603, 236, 1338, 299, 10) {
         ToolTip, Egg Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1353,7 +1400,7 @@ AutoAlignCameraLabel:
 Return
 
 SeedCraftingLabel(item) {
-    global seedCraftingOrder
+    global seedCraftingOrder, RecallSlot
 
     ; Make sure the item is not none
     if (item = "None") {
@@ -1418,7 +1465,7 @@ Return
 }
 
 CraftingLabel(item) {
-    global craftingOrder
+    global craftingOrder, RecallSlot
 
     ; Make sure the item is not none
     if (item = "None") {
@@ -1429,6 +1476,7 @@ CraftingLabel(item) {
     ; Now start the actual crafting
     Tooltip, Crafting %item%
     SetTimer, ClearTooltip, -1500
+    Msgbox, %RecallSlot%
     Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5, 0)
@@ -1741,7 +1789,7 @@ SafariShopLabel:
     ; Open the shop
     Send, {E}
     Sleep, 2500
-    if PixelColorFound(0x53C705, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0xC16B12, 603, 236, 1338, 299, 10) {
         ToolTip, Safari Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1848,12 +1896,12 @@ DetectMapSide:
     UINavigation("UUUUUUUUUUUUUUUUUUUUURRE")
     Sleep, 1000
     Send, {a down}
-    Sleep, 5000
+    Sleep, 1500
     Send, {a up}
     Sleep, 1000
     Send, {E}
     Sleep, 2000
-    if PixelColorFound(0x53A734, 603, 236, 1338, 299, 10) {
+    if ImageDetect("SaveSlots.png", 590, 156, 1310, 884, 80) = 1 {
         Tooltip, Seeds Side Detected
         MapSide := "Seeds"
         ClickRelative(1255, 227, 1)
@@ -1878,6 +1926,7 @@ AutoCollectPlantsLabel:
 
     ; Camera should be good now
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    Sleep, 1000
 
     ; Collect plants
     Send, {o down}
@@ -1896,7 +1945,7 @@ AutoCollectPlantsLabel:
     Send, {a up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Sleep, 500
@@ -1907,7 +1956,7 @@ AutoCollectPlantsLabel:
     Send, {a up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Sleep, 500
@@ -1923,7 +1972,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -1931,7 +1980,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -1939,7 +1988,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -1952,7 +2001,7 @@ AutoCollectPlantsLabel:
     Send, {d up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {d down}
@@ -1960,7 +2009,7 @@ AutoCollectPlantsLabel:
     Send, {d up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {d down}
@@ -1969,6 +2018,7 @@ AutoCollectPlantsLabel:
     Sleep, 500
 
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    Sleep, 1000
 
     ; right side
     Send, {s down}
@@ -1980,7 +2030,7 @@ AutoCollectPlantsLabel:
     Send, {d up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {d down}
@@ -1988,7 +2038,7 @@ AutoCollectPlantsLabel:
     Send, {d up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {d down}
@@ -2001,7 +2051,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -2009,7 +2059,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -2017,7 +2067,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -2030,7 +2080,7 @@ AutoCollectPlantsLabel:
     Send, {a up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {a down}
@@ -2038,7 +2088,7 @@ AutoCollectPlantsLabel:
     Send, {a up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {a down}
@@ -2047,6 +2097,7 @@ AutoCollectPlantsLabel:
     Sleep, 500
 
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    Sleep, 1000
 
     ; middle
     Send, {s down}
@@ -2054,7 +2105,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -2062,7 +2113,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -2070,7 +2121,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
     Send, {s down}
@@ -2078,7 +2129,7 @@ AutoCollectPlantsLabel:
     Send, {s up}
     Sleep, 500
     Send, {e down}
-    Sleep, 10000
+    Sleep, 5000
     Send, {e up}
     CloseRobuxPrompt()
 
