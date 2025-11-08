@@ -1,4 +1,13 @@
-Version Safari1.21
+Version MegaSafari1.0
 
 Additions:
- - Added Pet Shard JUMBO
+ - Added new Safari shop items
+ - Added Auto Collect Plants
+ - Added Auto Sell Plants
+ - Added reconnect to public server option
+
+Bug Fixes:
+ - Fixed not detecting camera mode properly
+ - Fixed gear shop order
+ - Fixed gear, egg, and crafting detection
+ - Fixed macro thinking it reconnected when "Connection Failed" pops up

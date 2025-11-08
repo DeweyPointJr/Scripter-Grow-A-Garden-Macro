@@ -19,7 +19,7 @@ if (extractedDir != "") {
     ; Move all non-update files up one level
     Loop, Files, %extractedDir%\*.*, F
     {
-        if (A_LoopFileName != "update.ahk") {
+        if (A_LoopFileName != "update.ahk" && A_LoopFileName != "config.ini") {
             FileMove, %A_LoopFileFullPath%, %A_ScriptDir%\%A_LoopFileName%, 1
         }
     }

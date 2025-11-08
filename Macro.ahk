@@ -13,6 +13,7 @@ global iniFile := A_ScriptDir "\config.ini"
 global AutoAlignCamera
 global UseEventLanterns
 global CurrentShop := ""
+global MapSide := ""
 
 global shopKeys := Object()
 shopKeys["Seeds"] := "Seed"
@@ -37,6 +38,8 @@ IniRead, RecallSlot, %iniFile%, Settings, RecallSlot, 2
 IniRead, LanternSlot, %iniFile%, Settings, LanternSlot, 3
 
 IniRead, UseEventLanterns, %iniFile%, Settings, UseEventLanterns, 0
+IniRead, AutoCollectPlants, %iniFile%, Settings, AutoCollectPlants, 0
+IniRead, AutoSellPlants, %iniFile%, Settings, AutoSellPlants, 0
 
 ; === Bind Hotkeys Dynamically ===
 Hotkey, %StartHotkey%, StartHotkeyLabel
@@ -46,8 +49,10 @@ Hotkey, %StopHotkey%, StopHotkeyLabel
 ; === Reconnect ===
 global VIP_SERVER_LINK
 global AutoReconnect
-IniRead, VIP_SERVER_LINK, %iniFile%, Settings, VipServerLink
-INiRead, AutoReconnect, %iniFile%, Settings, AutoReconnect
+global JoinPublicServer
+IniRead, VIP_SERVER_LINK, %iniFile%, Settings, VipServerLink, "Enter a private server link here."
+INiRead, AutoReconnect, %iniFile%, Settings, AutoReconnect, 0
+IniRead, JoinPublicServer, %iniFile%, Settings, JoinPublicServer, 0
 
 ; === Positiniong ===
 global backpackBtnX
@@ -62,8 +67,8 @@ global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Co
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
                 , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Trinity Fruit"]
 
-global gears := ["Watering Can", "Trading Ticket", "Trowel", "Recall Wrench", "Basic Sprinkler", "Advanced Sprinkler", "Medium Toy", "Pet Name Reroller", "Pet Lead", "Medium Treat", "Godly Sprinkler", "Magnifying Glass"
-                , "Master Sprinkler", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Grandmaster Sprinkler", "Levelup Lollipop"]
+global gears := ["Watering Can", "Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler", "Master Sprinkler", "Grandmaster Sprinkler", "Trowel", "Recall Wrench", "Medium Toy", "Pet Name Reroller", "Pet Lead"
+                , "Medium Treat", "Magnifying Glass", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Levelup Lollipop", "Trading Ticket"]
 
 global eggs := ["Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Jungle Egg", "Bug Egg"]
 
@@ -83,7 +88,8 @@ global seedCraftingOrder := ["None", "Mandrake", "Evo Apple I", "Evo Apple II", 
 
 global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Anti Bee Egg", "Small Toy", "Small Treat", "Pet Pouch", "Pack Bee"]
 
-global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab", "Pet Shard JUMBO"]
+global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab", "Pet Shard JUMBO"
+                 , "Safari Seed Pack", "Savannah Crate", "Gecko", "Hyena", "Cape Buffalo", "Hippo", "Ancestral Horn", "Crocodile", "Safari Obelisk Charm", "Lion"]
 
 global pass := ["Zenith Crate", "Mossy Rock", "Silver Fertilizer", "Zenith Seed Pack", "Levelup Lollipop", "Grow All", "Wyrmvine"]
 
@@ -204,7 +210,19 @@ CheckCameraMode() {
             Tooltip, Match found: Camera%A_Index%
             return A_Index
         }
-        Sleep, 1000
+    }
+    Loop, 4 {
+        Send, {Right}
+        Sleep, 100
+    }
+    Loop, 4 {
+        imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
+        Tooltip, Checking: Camera%A_Index%
+        ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
+        if (ErrorLevel = 0) {
+            Tooltip, Match found: Camera%A_Index%
+            return A_Index
+        }
     }
     Tooltip, No match found
     return 0  ; No match found
@@ -236,6 +254,12 @@ SetCameraMode(number) {
 }
 
 CheckRobloxStatusFunc() {
+
+    ; Check if Roblox is not open
+    if !(WinExist("Roblox")) {
+        Tooltip, ⚠ Roblox not open. Reconnecting...
+        ReconnectToGame()
+    }
     
     ; Check if the disconnected text exists
     global RobloxWindow
@@ -278,7 +302,7 @@ CheckRobloxStatusFunc() {
 
 ReconnectToGame() {
     global VIP_SERVER_LINK, RECONNECT_DELAY
-    if (VIP_SERVER_LINK = "") {
+    if (VIP_SERVER_LINK = "") || (VIP_SERVER_LINK = "Enter a private server link here.") {
         Tooltip, ❌ Cannot reconnect: No VIP Server link
         return
     }
@@ -298,7 +322,25 @@ ReconnectToGame() {
         
         ; Open VIP Server link
         Tooltip, 🚀 Opening Roblox...
-        Run, %VIP_SERVER_LINK%
+        if JoinPublicServer {
+            joinLink := "roblox://placeID=126884695634066"
+        } else {
+            ; --- Extract the link-code part from the URL ---
+            if (RegExMatch(VIP_SERVER_LINK, "i)(?<=privateServerLinkCode=)[A-Za-z0-9]+", linkCode))
+            {
+                ; Build the Roblox deeplink URI
+                joinLink := "roblox://placeID=126884695634066&linkCode=" linkCode
+            }
+        }
+        ; Launch via Windows Shell (same behavior as Win+R)
+        try
+        {
+            ComObjCreate("Shell.Application").ShellExecute(joinLink)
+        }
+        catch e
+        {
+            MsgBox, 16, Error, % "Failed to launch Roblox:`n" e.Message
+        }
         
         ; Wait for Roblox to open
         Loop 30 {
@@ -308,8 +350,18 @@ ReconnectToGame() {
                 Tooltip, ✅ Roblox opened successfully. Loading game...
                 WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
                 Sleep, 15000  ; Wait for game to load
+                ; Check for connection failed
+                imagePath := A_ScriptDir . "\Images\ConnectionFailed.png"
+                ImageSearch, FoundX, FoundY, (((X+702)/1936)*W), (((Y+361)/1056)*H), (((X+1224)/1936)*W), (((Y+718)/1056)*H), *80 %imagePath%
+                if (ErrorLevel = 0) {
+                    Tooltip, ⚠ Connection Failed. Retrying...
+                    Sleep, 2500
+                    ReconnectToGame()
+                }
+                ; Connection didn't fail. Return to previous function
                 Tooltip, 🎮 Successfully joined game!
                 ClickRelative(0.5, 0.5)
+                MapSide := ""
                 break
             }
             Sleep, 1000
@@ -525,7 +577,7 @@ BuyFromShop(shopName) {
         if selectedNameMap.HasKey(item) {
             ToolTip, Buying %item%
             noGifting := false
-            if (prefix = "Gear" && idx = 3) || (prefix = "Gear" && idx = 8) || (prefix = "Gear" && idx = 9)
+            if (prefix = "Gear" && idx = 7) || (prefix = "Gear" && idx = 10) || (prefix = "Gear" && idx = 11)
                 || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey")
                 || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler")
                 || (prefix = "Safari") {
@@ -573,7 +625,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "Safari1.21" ; <-- Set your current version here
+    currentVersion := "MegaSafari1.0" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -769,8 +821,23 @@ MainLoop:
         if (AnyItemsSelected("Pass") = 1) {
             Gosub, PassShopLabel
         }
+
+        ; Check if auto collect plants is on
+        if (AutoCollectPlants) {
+            Gosub, AutoCollectPlantsLabel
+        }
+
+        ; Check if auto sell plants is on
+        if (AutoSellPlants) {
+            Gosub, AutoSellPlantsLabel
+        }
     } else {
-        MsgBox, Roblox window not found!
+        if (AutoReconnect) {
+            CheckRobloxStatusFunc()
+        } else {
+            MsgBox, Roblox window not found! Please open Roblox.
+        }
+        
     }
 
     SetTimer, MainLoop, -1000
@@ -783,7 +850,7 @@ MainGui:
     Gui, New, +Resize, Scripter Macro
 
     ; Title label at the top
-    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [SAFARI]
+    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [MEGA SAFARI]
 
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gShopsGui, Shops
@@ -1026,10 +1093,20 @@ SettingsGui:
     Gui, Add, Checkbox, vAutoAlignCamera x120 y50
     GuiControl,, AutoAlignCamera, %AutoAlignCamera%
 
-    Gui, Add, Text, x20 y75, Use Event Lanterns:
+    Gui, Add, Text, x20 y125, Use Event Lanterns:
     IniRead, UseEventLanterns, config.ini, Settings, UseEventLanterns, 0
-    Gui, Add, Checkbox, vUseEventLanterns x120 y75
+    Gui, Add, Checkbox, vUseEventLanterns x120 y125
     GuiControl,, UseEventLanterns, %UseEventLanterns%
+
+    Gui, Add, Text, x20 y75, Auto Collect Plants:
+    IniRead, AutoCollectPlants, config.ini, Settings, AutoCollectPlants, 0
+    Gui, Add, Checkbox, vAutoCollectPlants x120 y75
+    GuiControl,, AutoCollectPlants, %AutoCollectPlants%
+
+    Gui, Add, Text, x20 y100, Auto Sell Plants:
+    IniRead, AutoSellPlants, config.ini, Settings, AutoSellPlants, 0
+    Gui, Add, Checkbox, vAutoSellPlants x120 y100
+    GuiControl,, AutoSellPlants, %AutoSellPlants%
 
 
     ; === Hotkeys Tab ===
@@ -1065,10 +1142,13 @@ SettingsGui:
     Gui, Add, Edit, x20 y60 w200 h20 vVipLink, %VIP_SERVER_LINK%
     Gui, Add, Text, x20 y90 w120, Auto Reconnect:
     Gui, Add, Checkbox, x110 y92 vAutoReconnect
+    Gui, Add, Text, x20 y115 w120, Join Public Server:
+    Gui, Add, Checkbox, x110 y117 vJoinPublicServer
     GuiControl,, AutoReconnect, %AutoReconnect%
-    Gui, Add, Button, gReconnectToGame x20 y110 w80 h30, Test Reconnect
+    GuiControl,, JoinPublicServer, %JoinPublicServer%
+    Gui, Add, Button, gReconnectToGame x20 y145 w80 h30, Test Reconnect
 
-    Gui, Add, Text, x20 y160, Credit to INNIE for the original reconnect script!
+    Gui, Add, Text, x20 y180, Credit to INNIE for the original reconnect script!
 
     ; === Save Button ===
     Gui, Tab  ; Ends tab section
@@ -1083,6 +1163,8 @@ SaveSettings:
     ; Save general to INI
     IniWrite, %AutoAlignCamera%, config.ini, Settings, AutoAlignCamera
     IniWrite, %UseEventLanterns%, config.ini, Settings, UseEventLanterns
+    IniWrite, %AutoCollectPlants%, config.ini, Settings, AutoCollectPlants
+    IniWrite, %AutoSellPlants%, config.ini, Settings, AutoSellPlants
 
 
     ; Save hotkeys to INI
@@ -1095,6 +1177,7 @@ SaveSettings:
     ; Save Reconnect Settings
     IniWrite, %VipLink%, config.ini, Settings, VipServerLink
     IniWrite, %AutoReconnect%, config.ini, Settings, AutoReconnect
+    IniWrite, %JoinPublicServer%, config.ini, Settings, JoinPublicServer
 
     Reload ; hotkey changes take effect
 Return
@@ -1173,7 +1256,7 @@ GearShopLabel:
     Sleep, 1000
     Send, {e}
     Sleep, 5000
-    if PixelColorFound(0x53AB3A, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x52C981, 603, 236, 1338, 299, 10) {
         ToolTip, Gear Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1203,7 +1286,7 @@ EggShopLabel:
     Sleep, 2000
     ClickRelative(1576, 452, 1)
     Sleep, 3000
-    if PixelColorFound(0x53AB3A, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x51AF90, 603, 236, 1338, 299, 10) {
         ToolTip, Egg Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1285,7 +1368,7 @@ SeedCraftingLabel(item) {
     }
     Sleep, 2500
     ; Make sure the crafting menu opened
-    if PixelColorFound(0x4D01A1, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x804FA3, 603, 236, 1338, 299, 10) {
         ToolTip, Crafting Menu Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1350,7 +1433,7 @@ CraftingLabel(item) {
     }
     Sleep, 2500
     ; Make sure the crafting menu opened
-    if PixelColorFound(0x4D01A1, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x804FA3, 603, 236, 1338, 299, 10) {
         ToolTip, Crafting Menu Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1677,7 +1760,7 @@ PassShopLabel:
     }
 
     ; First use UI navigation to get to the first item
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLDEUUUUUUUUUUUUUUUURRRRDRREDDD")
+    UINavigation("LLLLLLLLLLLLLLLLLLLLUEUUUUUUUUUUUUUUUURRRRDRREDDD")
     Sleep, 100
     ClickRelative(1211, 850, 1)
     Sleep, 1000
@@ -1747,3 +1830,271 @@ PassShopLabel:
     ClickRelative(0.5, 0.5)
     Sleep, 1000
 Return
+
+DetectMapSide:
+    Tooltip, Detecting Map Side
+    UINavigation("UUUUUUUUUUUUUUUUUUUUURRE")
+    Sleep, 1000
+    Send, {a down}
+    Sleep, 5000
+    Send, {a up}
+    Sleep, 1000
+    Send, {E}
+    Sleep, 2000
+    if PixelColorFound(0x53A734, 603, 236, 1338, 299, 10) {
+        Tooltip, Seeds Side Detected
+        MapSide := "Seeds"
+        ClickRelative(1255, 227, 1)
+    } else {
+        Tooltip, Sell Side Detected
+        MapSide := "Sell"
+    }
+Return
+
+AutoCollectPlantsLabel:
+    if (MapSide = "") {
+        Gosub, DetectMapSide
+    }
+
+    if (MapSide = "Sell") {
+        SetCameraMode(3)
+        Sleep, 1000
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLE")
+        Sleep, 1000
+        SetCameraMode(1)
+    }
+
+    ; Camera should be good now
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+
+    ; Collect plants
+    Send, {o down}
+    Sleep, 5000
+    Send, {o up}
+    Sleep, 1000
+
+
+    ; left side
+    Send, {s down}
+    Sleep, 270
+    Send, {s up}
+    Sleep, 500
+    Send, {a down}
+    Sleep, 900
+    Send, {a up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Sleep, 500
+    ClickRelative(0.64824, 0.21306)
+    Sleep, 500
+    Send, {a down}
+    Sleep, 800
+    Send, {a up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Sleep, 500
+    ClickRelative(0.64824, 0.21306)
+    Sleep, 500
+    Send, {a down}
+    Sleep, 600
+    Send, {a up}
+    Sleep, 500
+
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1200
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1300
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    Sleep, 500
+
+    Send, {d down}
+    Sleep, 900
+    Send, {d up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {d down}
+    Sleep, 800
+    Send, {d up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {d down}
+    Sleep, 600
+    Send, {d up}
+    Sleep, 500
+
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+
+    ; right side
+    Send, {s down}
+    Sleep, 270
+    Send, {s up}
+    Sleep, 500
+    Send, {d down}
+    Sleep, 800
+    Send, {d up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {d down}
+    Sleep, 800
+    Send, {d up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {d down}
+    Sleep, 600
+    Send, {d up}
+    Sleep, 500
+
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1200
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1300
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    Sleep, 500
+
+    Send, {a down}
+    Sleep, 900
+    Send, {a up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {a down}
+    Sleep, 800
+    Send, {a up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {a down}
+    Sleep, 600
+    Send, {a up}
+    Sleep, 500
+
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+
+    ; middle
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1200
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1300
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 1000
+    Send, {s up}
+    Sleep, 500
+    Send, {e down}
+    Sleep, 10000
+    Send, {e up}
+    CloseRobuxPrompt()
+
+    if (MapSide = "Sell") {
+        SetCameraMode(3)
+        Sleep, 1000
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLERRE")
+        Sleep, 1000
+        SetCameraMode(1)
+        Loop, 25 {
+            Send, {WheelUp}
+            Sleep, 30
+        }
+        Sleep, 1000
+        Loop, 6 {
+            Send, {WheelDown}
+            Sleep, 30
+        }
+        Sleep, 1000
+    } 
+Return
+
+AutoSellPlantsLabel:
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+    Sleep, 2500
+    Send, {E}
+    Sleep, 3000
+    ClickRelative(1580, 458, 1)
+    Sleep, 3000
+Return
+
