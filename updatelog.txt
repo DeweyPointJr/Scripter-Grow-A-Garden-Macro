@@ -1,4 +1,8 @@
-Version MegaSafari1.01
+Version MegaSafari1.02
+
+V1.02 Changes:
+ - Added Zebrazinkle
+ - Fixed various bugs
 
 Additions:
  - Added new Safari shop items
@@ -11,7 +15,3 @@ Bug Fixes:
  - Fixed gear shop order
  - Fixed macro thinking it reconnected when "Connection Failed" pops up
 
-V1.01 Changes:
- - Added Navigation Settings Start
- - Fixed gear, egg, and crafting detection
- - Fixed map side detection.

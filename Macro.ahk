@@ -1,4 +1,4 @@
-﻿#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
+#NoEnv  ; Recommended for performance and compatibility with future AutoHotkey releases.
 ; #Warn  ; Enable warnings to assist with detecting common errors.
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
@@ -66,7 +66,7 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
-                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Trinity Fruit"]
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle" "Trinity Fruit"]
 
 global gears := ["Watering Can", "Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler", "Master Sprinkler", "Grandmaster Sprinkler", "Trowel", "Recall Wrench", "Medium Toy", "Pet Name Reroller", "Pet Lead"
                 , "Medium Treat", "Magnifying Glass", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Levelup Lollipop", "Trading Ticket"]
@@ -587,7 +587,7 @@ BuyFromShop(shopName) {
     Sleep, 100
     ClickRelative(983, 728, 1)
     Sleep, 1000
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD", 0, 0)
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDEE", 0, 0)
     Sleep, 1000
 
     ; Get shop items and prefix
@@ -655,6 +655,9 @@ BuyFromShop(shopName) {
     UINavigation("", 1, 1)
     Sleep, 1000
     ClickRelative(388, 544, 1)
+    Sleep, 1000
+    ClickRelative(1300, 269, 1)
+    Sleep, 1000
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRE")
 
     ; Confirm Roblox window still exists
@@ -678,7 +681,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "MegaSafari1.01" ; <-- Set your current version here
+    currentVersion := "MegaSafari1.02" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1476,7 +1479,6 @@ CraftingLabel(item) {
     ; Now start the actual crafting
     Tooltip, Crafting %item%
     SetTimer, ClearTooltip, -1500
-    Msgbox, %RecallSlot%
     Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5, 0)
