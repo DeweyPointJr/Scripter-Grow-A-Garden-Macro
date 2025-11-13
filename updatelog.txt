@@ -1,6 +1,6 @@
-Version MegaSafari1.02
+Version MegaSafari1.03
 
-V1.02 Changes:
+V1.03 Changes:
  - Added Zebrazinkle
  - Fixed various bugs
 
