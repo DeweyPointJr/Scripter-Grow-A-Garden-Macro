@@ -66,7 +66,7 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
-                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle" "Trinity Fruit"]
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle", "Trinity Fruit"]
 
 global gears := ["Watering Can", "Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler", "Master Sprinkler", "Grandmaster Sprinkler", "Trowel", "Recall Wrench", "Medium Toy", "Pet Name Reroller", "Pet Lead"
                 , "Medium Treat", "Magnifying Glass", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Levelup Lollipop", "Trading Ticket"]
