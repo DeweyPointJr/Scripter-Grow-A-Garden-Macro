@@ -25,7 +25,6 @@ shopKeys["Honey"] := "Honey"
 shopKeys["Summer"] := "Summer"
 shopKeys["Sprinklers"] := "Sprinkler"
 shopKeys["Fall"] := "Fall"
-shopKeys["Safari"] := "Safari"
 shopKeys["Pass"] := "Pass"
 
 ; === Read from INI ===
@@ -66,12 +65,12 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
-                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle", "Trinity Fruit"]
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle"]
 
 global gears := ["Watering Can", "Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler", "Master Sprinkler", "Grandmaster Sprinkler", "Trowel", "Recall Wrench", "Medium Toy", "Pet Name Reroller", "Pet Lead"
                 , "Medium Treat", "Magnifying Glass", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Levelup Lollipop", "Trading Ticket"]
 
-global eggs := ["Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Jungle Egg", "Bug Egg"]
+global eggs := ["Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Jungle Egg", "Bug Egg", "Gem Egg"]
 
 global gnomes := ["Common Gnome Crate", "Farmers Gnome Crate", "Classic Gnome Crate", "Iconic Gnome Crate", "Gnome"]
 
@@ -88,9 +87,6 @@ global fall := ["Fall Seed Pack", "Kniphofia", "Maple Resin", "Fall Egg", "Chipm
 global seedCraftingOrder := ["None", "Mandrake", "Evo Apple I", "Evo Apple II", "Evo Apple III", "Evo Apple IV"]
 
 global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Anti Bee Egg", "Small Toy", "Small Treat", "Pet Pouch", "Pack Bee"]
-
-global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Safari Egg", "Protea", "Lush Sprinkler", "Mini Shopping Container", "Safari Totem Charm", "Baobab", "Pet Shard JUMBO"
-                 , "Safari Seed Pack", "Savannah Crate", "Gecko", "Hyena", "Cape Buffalo", "Hippo", "Ancestral Horn", "Crocodile", "Safari Obelisk Charm", "Lion"]
 
 global pass := ["Zenith Crate", "Mossy Rock", "Silver Fertilizer", "Zenith Seed Pack", "Levelup Lollipop", "Grow All", "Wyrmvine"]
 
@@ -110,7 +106,6 @@ shops["Sprinklers"] := sprinklers
 shops["Fall"]   := fall
 
 ; add event shops
-shops["Safari"] := safari
 shops["Pass"] := pass
 
 global shopPrefixes := Object()
@@ -127,7 +122,6 @@ shopPrefixes["Sprinklers"] := "Sprinkler"
 shopPrefixes["Fall"]   := "Fall"
 
 ; add event prefixes
-shopPrefixes["Safari"] := "Safari"
 shopPrefixes["Pass"] := "Pass"
 
 ; FUNCTIONS
@@ -631,8 +625,7 @@ BuyFromShop(shopName) {
             noGifting := false
             if (prefix = "Gear" && idx = 7) || (prefix = "Gear" && idx = 10) || (prefix = "Gear" && idx = 11)
                 || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey")
-                || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler")
-                || (prefix = "Safari") {
+                || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") {
                 noGifting := true
             }
 
@@ -681,7 +674,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "MegaSafari1.03" ; <-- Set your current version here
+    currentVersion := "Smithing0.5" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -868,11 +861,6 @@ MainLoop:
             Gosub, MerchantLabel
         }
 
-        ; Check if any safari items are selected
-        if (AnyItemsSelected("Safari") = 1) {
-            Gosub, SafariShopLabel
-        }
-
         ; Check if any season pass items are selected
         if (AnyItemsSelected("Pass") = 1) {
             Gosub, PassShopLabel
@@ -906,7 +894,7 @@ MainGui:
     Gui, New, +Resize, Scripter Macro
 
     ; Title label at the top
-    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [MEGA SAFARI]
+    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [SMITHING]
 
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gShopsGui, Shops
@@ -940,7 +928,7 @@ CraftEventsGui:
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gSeedCraftingGui,  Seed Crafting
     Gui, Add, Button, w180 h40 gCraftingGui, Crafting
-    Gui, Add, Button, w180 h40 gEventsGui, Safari Event
+    Gui, Add, Button, w180 h40 gEventsGui, Smithing Event
     Gui, Add, Button, w180 h40 gPassGui, Pass Shop
     Gui, Add, Button, w180 h40 gMainGui, Back
 
@@ -1132,8 +1120,7 @@ SaveCrafting:
 return
 
 EventsGui:
-    CurrentShop := "Safari"
-    Gosub, ShowShopGui
+    MsgBox, Smithing Event will be added soon! Please be patient!
 Return
 
 SettingsGui:
@@ -1757,55 +1744,6 @@ MerchantLabel:
 
     
     
-Return
-
-SafariShopLabel:
-    Tooltip, Going to Safari Shop
-    SetTimer, ClearTooltip, -1500
-    if (UseEventLanterns = 1) {
-        Send, {%LanternSlot%}
-        Sleep, 1000
-        ClickRelative(0.5, 0.5)
-        Sleep, 1000
-        Send, {a down}
-        Sleep, 1500
-        Send, {a up}
-        Sleep, 100
-        Send, {s down}
-        Sleep, 500
-        Send, {s up}
-        Sleep, 1000
-    } else {
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
-        Sleep, 1000
-        Send, {d down}
-        Sleep, 8300
-        Send, {d up}
-        Sleep, 100
-        Send, {s down}
-        Sleep, 1000
-        Send, {s up}
-        Sleep, 1000
-    }
-
-    ; Open the shop
-    Send, {E}
-    Sleep, 2500
-    if PixelColorFound(0xC16B12, 603, 236, 1338, 299, 10) {
-        ToolTip, Safari Shop Opened
-        SetTimer, ClearTooltip, -1500
-        Sleep, 1000
-        BuyFromShop("Safari")
-        Tooltip, Safari Completed
-        Sleep, 1000
-        Gosub, ClearTooltip
-        Sleep, 1000
-        ClickRelative(1298, 264, 1)
-        Sleep, 1000
-        CloseRobuxPrompt()
-    } else {
-        Tooltip, ERROR: Safari Shop Not Opening
-    }
 Return
 
 PassShopLabel:

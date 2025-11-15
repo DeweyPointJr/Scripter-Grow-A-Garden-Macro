@@ -1,17 +1,7 @@
-Version MegaSafari1.03
-
-V1.03 Changes:
- - Added Zebrazinkle
- - Fixed various bugs
+Version Smithing0.5
 
 Additions:
- - Added new Safari shop items
- - Added Auto Collect Plants
- - Added Auto Sell Plants
- - Added reconnect to public server option
+ - Added Gem Egg
 
-Bug Fixes:
- - Fixed not detecting camera mode properly
- - Fixed gear shop order
- - Fixed macro thinking it reconnected when "Connection Failed" pops up
-
+Changes:
+ - Removed Safari Event
