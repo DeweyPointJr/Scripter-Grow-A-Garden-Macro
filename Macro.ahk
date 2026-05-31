@@ -3,8 +3,6 @@
 SendMode Input  ; Recommended for new scripts due to its superior speed and reliability.
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
-
-
 ; GLOBAL VARIABLES
 
 global RobloxWindow
@@ -14,6 +12,13 @@ global AutoAlignCamera
 global UseEventLanterns
 global CurrentShop := ""
 global MapSide := ""
+
+global AutoHarvest
+global HarvestNow := false
+
+global AutoCompress
+global HoneyGardenActive
+global UsePollenRadars
 
 global shopKeys := Object()
 shopKeys["Seeds"] := "Seed"
@@ -25,6 +30,12 @@ shopKeys["Honey"] := "Honey"
 shopKeys["Summer"] := "Summer"
 shopKeys["Sprinklers"] := "Sprinkler"
 shopKeys["Fall"] := "Fall"
+shopKeys["RareCosmetics"] := "RareCosmetics"
+shopKeys["Safari"] := "Safari"
+shopKeys["RoyalJelly"] := "RoyalJelly"
+shopKeys["HoneyCoins"] := "HoneyCoins"
+shopKeys["HoneySeeds"] := "HoneySeeds"
+shopKeys["BeeEggs"] := "BeeEggs"
 shopKeys["Pass"] := "Pass"
 
 ; === Read from INI ===
@@ -38,8 +49,14 @@ IniRead, LanternSlot, %iniFile%, Settings, LanternSlot, 3
 IniRead, SettingsStart, %iniFile%, Settings, SettingsStart, 0
 
 IniRead, UseEventLanterns, %iniFile%, Settings, UseEventLanterns, 0
-IniRead, AutoCollectPlants, %iniFile%, Settings, AutoCollectPlants, 0
+IniRead, AutoHarvest, %iniFile%, Settings, AutoHarvest, 0
+IniRead, HarvestTime, %iniFile%, Settings, HarvestTime, 30
 IniRead, AutoSellPlants, %iniFile%, Settings, AutoSellPlants, 0
+
+IniRead, AutoCompress, %iniFile%, Settings, AutoCompress, 0
+IniRead, HoneyGardenActive, %iniFile%, Settings, HoneyGardenActive, 1
+IniRead, UsePollenRadars, %iniFile%, Settings, UsePollenRadars, 0
+IniRead, PollenRadarSlot, %iniFile%, Settings, PollenRadarSlot, 1
 
 ; === Bind Hotkeys Dynamically ===
 Hotkey, %StartHotkey%, StartHotkeyLabel
@@ -64,19 +81,17 @@ IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
 
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
-                , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
-                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle"]
+                , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Sunflower", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle", "Octobloom", "Alien Apple", "Pollenvine"]
 
 global gears := ["Watering Can", "Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler", "Master Sprinkler", "Grandmaster Sprinkler", "Trowel", "Recall Wrench", "Medium Toy", "Pet Name Reroller", "Pet Lead"
                 , "Medium Treat", "Magnifying Glass", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Levelup Lollipop", "Trading Ticket"]
 
-global eggs := ["Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Jungle Egg", "Bug Egg", "Gem Egg"]
+global eggs := ["Common Egg", "Uncommon Egg", "Rare Egg", "Legendary Egg", "Mythical Egg", "Bug Egg", "Jungle Egg"]
 
 global gnomes := ["Common Gnome Crate", "Farmers Gnome Crate", "Classic Gnome Crate", "Iconic Gnome Crate", "Gnome"]
 
 global sky := ["Night Staff", "Star Caller", "Mutation Spray Cloudtouched"]
-
-global honey := ["Flower Seed Pack", "Honey Sprinkler", "Bee Egg", "Bee Crate", "Honey Crafters Crate"]
 
 global summer := ["Cauliflower", "Rafflesia", "Green Apple", "Avocado", "Banana", "Pineapple", "Kiwi", "Bell Pepper", "Prickly Pear", "Loquat", "Feijoa", "Pitcher Plant", "Common Summer Egg", "Rare Summer Egg", "Paradise Egg"]
 
@@ -84,11 +99,25 @@ global sprinklers := ["Tropical Mist Sprinkler", "Berry Blusher Sprinkler", "Spi
 
 global fall := ["Fall Seed Pack", "Kniphofia", "Maple Resin", "Fall Egg", "Chipmunk", "Space Squirrel", "Red Panda", "Bonfire", "Harvest Basket", "Super Leaf Blower", "Rake", "Leaf Crate", "Maple Crate", "Fall Fountain"]
 
-global seedCraftingOrder := ["None", "Mandrake", "Evo Apple I", "Evo Apple II", "Evo Apple III", "Evo Apple IV"]
+global rareCosmetics := ["Cooking Pot", "Hot Spring", "Spell Book", "Wisp Well", "Hex Circle", "Sarcophagus"]
 
-global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Anti Bee Egg", "Small Toy", "Small Treat", "Pet Pouch", "Pack Bee"]
+global safari := ["Orange Delight", "Explorer's Compass", "Safari Crate", "Zebra Whistle", "Protea", "Lush Sprinkler", "Mini Shipping Container", "Baobab", "Pet Mutation Shard Jumbo", "Savannah Crate", "Gecko", "Hyena", "Cape Buffalo", "Hippo", "Ancestral Horn", "Crocodile", "Lion"]
 
-global pass := ["Zenith Crate", "Mossy Rock", "Silver Fertilizer", "Zenith Seed Pack", "Levelup Lollipop", "Grow All", "Wyrmvine"]
+global royalJelly := ["Pollen Puffball", "Carpenter Bee", "Grape Droplet", "Pet Shard RoyalJelly", "Royal Jelly Fountain", "King Bee", "Pohutukawa"]
+
+global honeyCoins := ["Honey Honey Daisy", "Honey Honey Dew", "Honey Hive Seed Pack", "Honey Ambercomb", "Pollen Radar 2026", "Honey Coneflower", "Hive Egg", "Hive Crate", "Professor Bee", "Honey Badger", "Honey Birds of Paradise", "Honey Honey Hollow"]
+
+global honeySeeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
+                , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Sunflower", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle", "Octobloom", "Alien Apple", "Pollenvine"]
+
+global beeEggs := ["Common", "Rare", "Mythical", "Transcendent"]
+
+global seedCraftingOrder := ["None", "Egg Melon", "Mandrake", "Evo Apple I", "Evo Apple II", "Evo Apple III", "Evo Apple IV", "Olive", "Hollow Bamboo", "Yarrow"]
+
+global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Small Toy", "Small Treat", "Pet Pouch", "Silver Ingot", "Gold Ingot", "Silver Piggy", "Golden Piggy", "Chimera Stone", "Black Spotty Egg"]
+
+global pass := ["Season 5 Crate", "Hammer of Harvest", "Garden Lantern", "Season 5 Seed Pack", "Levelup Lollipop", "Grow All", "Pinkfruit Palm"]
 
 ; SHOPS
 ; Create global shop objects
@@ -100,13 +129,18 @@ shops["Eggs"] := eggs
 ; add merchant shops to the same map
 shops["Gnomes"] := gnomes
 shops["Sky"]    := sky
-shops["Honey"]  := honey
 shops["Summer"] := summer
 shops["Sprinklers"] := sprinklers
 shops["Fall"]   := fall
+shops["RareCosmetics"] := rareCosmetics
+shops["Safari"] := safari
 
 ; add event shops
 shops["Pass"] := pass
+shops["RoyalJelly"] := royalJelly
+shops["HoneyCoins"] := honeyCoins
+shops["HoneySeeds"] := honeySeeds
+shops["BeeEggs"] := beeEggs
 
 global shopPrefixes := Object()
 shopPrefixes["Seeds"] := "Seed"
@@ -116,13 +150,18 @@ shopPrefixes["Eggs"]  := "Egg"
 ; add merchant prefixes
 shopPrefixes["Gnomes"] := "Gnome"
 shopPrefixes["Sky"]    := "Sky"
-shopPrefixes["Honey"]  := "Honey"
 shopPrefixes["Summer"] := "Summer"
 shopPrefixes["Sprinklers"] := "Sprinkler"
 shopPrefixes["Fall"]   := "Fall"
+shopPrefixes["RareCosmetics"] := "RareCosmetics"
+shopPrefixes["Safari"] := "Safari"
 
 ; add event prefixes
 shopPrefixes["Pass"] := "Pass"
+shopPrefixes["RoyalJelly"] := "RoyalJelly"
+shopPrefixes["HoneyCoins"] := "HoneyCoins"
+shopPrefixes["HoneySeeds"] := "HoneySeeds"
+shopPrefixes["BeeEggs"] := "BeeEggs"
 
 ; FUNCTIONS
 ClickRelative(relX, relY, coord := 0, noDelay := 0) {
@@ -183,6 +222,94 @@ ClickRelative(relX, relY, coord := 0, noDelay := 0) {
     SendMode %oldMode%
 }
 
+MouseMoveRelative(relX, relY, coord := 0, noDelay := 0) {
+    global RobloxWindow
+
+    ; Ensure RobloxWindow is valid
+    if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
+        WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+        if !RobloxWindow {
+            Tooltip, Roblox window not found!
+            return
+        }
+    }
+
+    ; Activate & restore window
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+    WinGet, winState, MinMax, ahk_id %RobloxWindow%
+    if (winState = -1) {
+        ; Window is minimized, restore it
+        WinRestore, ahk_id %RobloxWindow%
+    }
+
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+
+
+    ; Get window position
+    WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
+    if (ErrorLevel || W = 0 || H = 0) {
+        Tooltip, wingetpos failed
+        return
+    }
+
+    ; Calculate click coordinates
+    if (coord = 1) {
+        clickX := Round(X + (relX / 1936) * W)
+        clickY := Round(Y + (relY / 1056) * H)
+    } else if (coord = 2) {
+        clickX := relX
+        clickY := relY
+    } else {
+        clickX := Round(X + (W * relX))
+        clickY := Round(Y + (H * relY))
+        clickY += 3
+    }
+
+    oldMode := A_SendMode
+    
+
+    if (noDelay = 0) {
+        SendMode Event
+        MouseMove, %clickX%, %clickY%, 3
+    }
+    Sleep, 10
+
+    SendMode %oldMode%
+}
+
+RotateCamera(degrees)
+{
+    global RobloxWindow
+
+    if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow)
+    {
+        WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+        if !RobloxWindow
+            return
+    }
+
+    ClickRelative(0.5, 0.5)
+    WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
+
+    ; Scale from the 1936px reference width
+    dx := Round(degrees * (6.0 / 1936.0) * W)
+
+    SendInput {RButton Down}
+    Sleep 20
+
+    DllCall("mouse_event"
+        , "UInt", 0x0001
+        , "Int", dx
+        , "Int", 0
+        , "UInt", 0
+        , "UPtr", 0)
+
+    Sleep 20
+    SendInput {RButton Up}
+}
+
 CheckCameraMode() {
     global RobloxWindow
     WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
@@ -199,10 +326,8 @@ CheckCameraMode() {
 
     Loop, 4 {
         imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
-        Tooltip, Checking: Camera%A_Index%
         ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
         if (ErrorLevel = 0) {
-            Tooltip, Match found: Camera%A_Index%
             return A_Index
         }
     }
@@ -212,14 +337,12 @@ CheckCameraMode() {
     }
     Loop, 4 {
         imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
-        Tooltip, Checking: Camera%A_Index%
         ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
         if (ErrorLevel = 0) {
-            Tooltip, Match found: Camera%A_Index%
             return A_Index
         }
     }
-    Tooltip, No match found
+    Tooltip, ERROR: Unable to detect camera mode
     return 0  ; No match found
 }
 
@@ -252,7 +375,7 @@ CheckRobloxStatusFunc() {
 
     ; Check if Roblox is not open
     if !(WinExist("Roblox")) {
-        Tooltip, ⚠ Roblox not open. Reconnecting...
+        Tooltip, Roblox not open. Reconnecting...
         ReconnectToGame()
     }
     
@@ -272,7 +395,7 @@ CheckRobloxStatusFunc() {
         if (WinExist("ahk_class #32770 ahk_exe RobloxPlayerBeta.exe")) {
             errorText := WinGetText, ahk_class #32770 ahk_exe RobloxPlayerBeta.exe
             if (InStr(errorText, "disconnected") || InStr(errorText, "lost connection") || InStr(errorText, "error") || InStr(errorText, "Disconnected")) {
-                Tooltip, ⚠ Connection error detected. Reconnecting...
+                Tooltip, Connection error detected. Reconnecting...
                 WinClose, ahk_class #32770 ahk_exe RobloxPlayerBeta.exe
                 Sleep, 1000
                 ReconnectToGame()
@@ -286,7 +409,7 @@ CheckRobloxStatusFunc() {
             try {
                 windowTitle := WinGetTitle, "ahk_id " . hwnd
                 if (InStr(windowTitle, "Disconnected") || InStr(windowTitle, "Lost connection") || InStr(windowTitle, "Error")) {
-                    Tooltip, ⚠ Game disconnection detected. Reconnecting...
+                    Tooltip, Game disconnection detected. Reconnecting...
                     ReconnectToGame()
                     return
                 }
@@ -298,25 +421,25 @@ CheckRobloxStatusFunc() {
 ReconnectToGame() {
     global VIP_SERVER_LINK, RECONNECT_DELAY
     if (VIP_SERVER_LINK = "") || (VIP_SERVER_LINK = "Enter a private server link here.") {
-        Tooltip, ❌ Cannot reconnect: No VIP Server link
+        Tooltip, Cannot reconnect: No VIP Server link
         return
     }
     
-    Tooltip, 🔄 Starting reconnection process...
+    Tooltip, Starting reconnection process...
     
     ; Close all Roblox processes
     try {
         WinClose, Roblox
         Sleep, 1000
         WinClose, Roblox
-        Tooltip, ⏳ Roblox closed. Waiting...
+        Tooltip, Roblox closed. Waiting...
         Sleep, 2000
         
         ; Wait before reopening
         Sleep, %RECONNECT_DELAY%
         
         ; Open VIP Server link
-        Tooltip, 🚀 Opening Roblox...
+        Tooltip, Opening Roblox...
         if JoinPublicServer {
             joinLink := "roblox://placeID=126884695634066"
         } else {
@@ -342,19 +465,19 @@ ReconnectToGame() {
             global RobloxWindow
             if (WinExist("Roblox")) {
                 WinMaximize, Roblox
-                Tooltip, ✅ Roblox opened successfully. Loading game...
+                Tooltip, Roblox opened successfully. Loading game...
                 WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
-                Sleep, 15000  ; Wait for game to load
+                Sleep, 25000  ; Wait for game to load
                 ; Check for connection failed
                 imagePath := A_ScriptDir . "\Images\ConnectionFailed.png"
                 ImageSearch, FoundX, FoundY, (((X+702)/1936)*W), (((Y+361)/1056)*H), (((X+1224)/1936)*W), (((Y+718)/1056)*H), *80 %imagePath%
                 if (ErrorLevel = 0) {
-                    Tooltip, ⚠ Connection Failed. Retrying...
+                    Tooltip, Connection Failed. Retrying...
                     Sleep, 2500
                     ReconnectToGame()
                 }
                 ; Connection didn't fail. Return to previous function
-                Tooltip, 🎮 Successfully joined game!
+                Tooltip, Successfully joined game!
                 ClickRelative(0.5, 0.5)
                 MapSide := ""
                 break
@@ -577,12 +700,21 @@ BuyFromShop(shopName) {
     }
 
     ; Navigate to the first item in the shop
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
-    Sleep, 100
-    ClickRelative(983, 728, 1)
-    Sleep, 1000
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDEE", 0, 0)
-    Sleep, 1000
+    if (shopName = "Seeds") {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDD")
+        Sleep, 100
+        ClickRelative(983, 728, 1)
+        Sleep, 1000
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDEE", 0, 0)
+        Sleep, 100
+    } else {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
+        Sleep, 100
+        ClickRelative(983, 728, 1)
+        Sleep, 1000
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDEE", 0, 0)
+        Sleep, 1000
+    }
 
     ; Get shop items and prefix
     if shops.hasKey(shopName) {
@@ -625,7 +757,7 @@ BuyFromShop(shopName) {
             noGifting := false
             if (prefix = "Gear" && idx = 7) || (prefix = "Gear" && idx = 10) || (prefix = "Gear" && idx = 11)
                 || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey")
-                || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") {
+                || (prefix = "Summer") || (prefix = "Fall") || (prefix = "Sprinkler") || (prefix = "HoneySeeds") || (prefix = "HoneyCoins") || (prefix = "RoyalJelly") {
                 noGifting := true
             }
 
@@ -646,12 +778,14 @@ BuyFromShop(shopName) {
 
     ; Exit shop
     UINavigation("", 1, 1)
+    Sleep, 1000 
+    if (shopName != "HoneySeeds") && (shopName != "RoyalJelly") && (shopName != "HoneyCoins") {
+        ClickRelative(1410, 164, 1)
+    } else {
+        ClickRelative(1320, 248, 1)
+    }
     Sleep, 1000
-    ClickRelative(388, 544, 1)
-    Sleep, 1000
-    ClickRelative(1300, 269, 1)
-    Sleep, 1000
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRRE")
 
     ; Confirm Roblox window still exists
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
@@ -666,6 +800,13 @@ BuyFromShop(shopName) {
     Return
 }
 
+Walk(direction, duration, delay := 500) {
+    Send, {%direction% down}
+    Sleep, %duration%
+    Send, {%direction% up}
+    Sleep, %delay%
+}
+
 CloseRobuxPrompt() {
     Send, {Esc}
     Sleep, 100
@@ -674,7 +815,7 @@ CloseRobuxPrompt() {
 }
 
 CheckForUpdate() {
-    currentVersion := "Smithing0.5" ; <-- Set your current version here
+    currentVersion := "BizzyBees4v1.0" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -730,7 +871,7 @@ CheckForUpdate() {
             RunWait, %ComSpec% /c powershell -Command "Expand-Archive -Force '%A_ScriptDir%\update.zip' '%A_ScriptDir%'",, Hide
 
             ; Run updater (it will handle the log and file moves)
-            Run, %A_ScriptDir%\update.ahk
+            Run, %A_ScriptDir%\"Submacros"\update.ahk
             ExitApp
         }
     } else {
@@ -743,7 +884,7 @@ CheckForUpdate() {
 CheckForUpdatedUpdater() {
     updateCandidate := A_ScriptDir "\update_files\update.ahk"
     if FileExist(updateCandidate) {
-        FileMove, %updateCandidate%, %A_ScriptDir%\update.ahk, 1
+        FileMove, %updateCandidate%, %A_ScriptDir%\"Submacros"\update.ahk, 1
         FileRemoveDir, %A_ScriptDir%\update_files, 1
     }
 }
@@ -775,7 +916,7 @@ MainLoop:
         ; Make sure camera is aligned correctly
         Gosub, AutoAlignCameraLabel
         
-        ; Check if any seeds are selected (by reading config.ini where SaveSeeds writes them)
+        ; Check if any seeds are selected
         anySeedsSelected := false
         for i, item in seeds {
             IniRead, checked, %iniFile%, Seeds, Seed%i%, 0
@@ -786,6 +927,45 @@ MainLoop:
         }
         if (anySeedsSelected) {
             Gosub, SeedShopLabel
+        }
+
+        ; Check if any honey seeds are selected
+        anyHoneySeedsSelected := false
+        for i, item in honeySeeds {
+            IniRead, checked, %iniFile%, HoneySeeds, HoneySeeds%i%, 0
+            if (checked = "1" || checked = 1) {
+                anyHoneySeedsSelected := true
+                break
+            }
+        }
+        if (anyHoneySeedsSelected) {
+            Gosub, HoneySeedShopLabel
+        }
+
+        ; Check if any honey coin items are selected
+        anyHoneyCoinsSelected := false
+        for i, item in honeyCoins {
+            IniRead, checked, %iniFile%, HoneyCoins, HoneyCoins%i%, 0
+            if (checked = "1" || checked = 1) {
+                anyHoneyCoinsSelected := true
+                break
+            }
+        }
+        if (anyHoneyCoinsSelected) {
+            Gosub, HoneyCoinsLabel
+        }
+
+        ; Check if any royal jellyu items are selected
+        anyRoyalJellySelected := false
+        for i, item in royalJelly {
+            IniRead, checked, %iniFile%, RoyalJelly, RoyalJelly%i%, 0
+            if (checked = "1" || checked = 1) {
+                anyRoyalJellySelected := true
+                break
+            }
+        }
+        if (anyRoyalJellySelected) {
+            Gosub, RoyalJellyLabel
         }
 
         ; Check if any gears are selected (by reading config.ini where SaveGears writes them)
@@ -812,6 +992,19 @@ MainLoop:
         }
         if (anyEggsSelected) {
             Gosub, EggShopLabel
+        }
+
+        ; Check if any bee eggs are selected
+        anyBeeEggsSelected := false
+        for i, item in beeEggs {
+            IniRead, checked, %iniFile%, BeeEggs, BeeEggs%i%, 0
+            if (checked = "1" || checked = 1) {
+                anyBeeEggsSelected := true
+                break
+            }
+        }
+        if (anyBeeEggsSelected) {
+            Gosub, BeeEggsShopLabel
         }
 
         ; Check if any seed crafting items are selected (by reading config.ini where SaveSeedCrafting writes them)
@@ -867,8 +1060,13 @@ MainLoop:
         }
 
         ; Check if auto collect plants is on
-        if (AutoCollectPlants) {
-            Gosub, AutoCollectPlantsLabel
+        if (AutoHarvest && HarvestNow) {
+            Gosub, AutoHarvestLabel
+        }
+
+        ; Check if auto compress is on
+        if (AutoCompress) {
+            Gosub, CompressLabel
         }
 
         ; Check if auto sell plants is on
@@ -894,7 +1092,7 @@ MainGui:
     Gui, New, +Resize, Scripter Macro
 
     ; Title label at the top
-    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [SMITHING]
+    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [BIZZY BEES Part 4]
 
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gShopsGui, Shops
@@ -928,7 +1126,7 @@ CraftEventsGui:
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gSeedCraftingGui,  Seed Crafting
     Gui, Add, Button, w180 h40 gCraftingGui, Crafting
-    Gui, Add, Button, w180 h40 gEventsGui, Smithing Event
+    Gui, Add, Button, w180 h40 gEventsGui, Bizzy Bees Event
     Gui, Add, Button, w180 h40 gPassGui, Pass Shop
     Gui, Add, Button, w180 h40 gMainGui, Back
 
@@ -1105,6 +1303,26 @@ PassGui:
     Gosub, ShowShopGui
 Return
 
+RoyalJellyGui:
+    CurrentShop := "RoyalJelly"
+    Gosub, ShowShopGui
+Return
+
+HoneyCoinsGui:
+    CurrentShop := "HoneyCoins"
+    Gosub, ShowShopGui
+Return
+
+HoneySeedsGui:
+    CurrentShop := "HoneySeeds"
+    Gosub, ShowShopGui
+Return
+
+BeeEggsGui:
+    CurrentShop := "BeeEggs"
+    Gosub, ShowShopGui
+Return
+
 SaveCrafting:
     global craftingOrder
     selected := []
@@ -1120,7 +1338,65 @@ SaveCrafting:
 return
 
 EventsGui:
-    MsgBox, Smithing Event will be added soon! Please be patient!
+    Gui, Destroy
+    Gui, New, +Resize, Scripter Macro
+
+    ; Buttons stacked vertically
+    Gui, Add, Button, w180 h40 gHoneyCoinsGui, Honey Coins Shop
+    Gui, Add, Button, w180 h40 gHoneySeedsGui, Honey Seeds Shop
+    Gui, Add, Button, w180 h40 gRoyalJellyGui, Royal Jelly Shop
+    Gui, Add, Button, w180 h40 gBeeEggsGui, Bee Eggs Shop
+    Gui, Add, Button, w180 h40 gCraftEventsGui, Back
+
+    Gui, Add, Text, x200 y20, Honey Garden Active:
+    Gui, Add, Checkbox, vHoneyGardenActive gSaveHoneyGardenActive x310 y20
+    GuiControl,, HoneyGardenActive, %HoneyGardenActive%
+    
+    Gui, Add, Text, x200 y40, Auto Compress:
+    Gui, Add, Checkbox, vAutoCompress gSaveCompress x280 y40
+    GuiControl,, AutoCompress, %AutoCompress%
+
+    if (AutoHarvest) {
+        Gui, Add, Text, x200 y60, Use Pollen Radars:
+        Gui, Add, Checkbox, vUsePollenRadars gSaveUsePollenRadars x295 y60
+        GuiControl,, UsePollenRadars, %UsePollenRadars%
+
+        Gui, Add, Text, x325 y60 vPollenRadarSlotText, Slot:
+        Gui, Add, DropDownList, x350 y60 w30 vPollenRadarSlot gSavePollenRadarSlot, 1|2|3|4|5|6|7|8|9|0 
+        GuiControl, ChooseString, PollenRadarSlot, %PollenRadarSlot%
+
+        Gosub, SaveUsePollenRadars
+    }
+
+    ; Show GUI
+    Gui, Show, w400 h240, Scripter Macro
+Return
+
+SaveCompress:
+    Gui, Submit, NoHide
+    IniWrite, %AutoCompress%, config.ini, Settings, AutoCompress
+Return
+
+SaveHoneyGardenActive:
+    Gui, Submit, NoHide
+    IniWrite, %HoneyGardenActive%, config.ini, Settings, HoneyGardenActive
+Return
+
+SaveUsePollenRadars:
+    Gui, Submit, NoHide
+    IniWrite, %UsePollenRadars%, %iniFile%, Settings, UsePollenRadars
+    if (UsePollenRadars) {
+        GuiControl, Show, PollenRadarSlotText
+        GuiControl, Show, PollenRadarSlot
+    } else {
+        GuiControl, Hide, PollenRadarSlotText
+        GuiControl, Hide, PollenRadarSlot
+    }
+Return
+
+SavePollenRadarSlot:
+    Gui, Submit, NoHide
+    IniWrite, %PollenRadarSlot%, %iniFile%, Settings, PollenRadarSlot
 Return
 
 SettingsGui:
@@ -1141,10 +1417,16 @@ SettingsGui:
     Gui, Add, Checkbox, vUseEventLanterns x120 y125
     GuiControl,, UseEventLanterns, %UseEventLanterns%
 
-    Gui, Add, Text, x20 y75, Auto Collect Plants:
-    IniRead, AutoCollectPlants, config.ini, Settings, AutoCollectPlants, 0
-    Gui, Add, Checkbox, vAutoCollectPlants x120 y75
-    GuiControl,, AutoCollectPlants, %AutoCollectPlants%
+    Gui, Add, Text, x20 y75, Auto Harvest
+    Gui, Add, Checkbox, vAutoHarvest gHarvestCheck x90 y75
+    GuiControl,, AutoHarvest, %AutoHarvest%
+
+    ; Hidden text for autoharvest
+    Gui, Add, Text, x120 y75 Hidden vHarvestEveryText1, every
+    Gui, Add, Edit, x150 y72 w50 h20 Hidden vHarvestTimeEdit, %HarvestTime%
+    Gui, Add, Text, x205 y75 Hidden vHarvestEveryText2, minutes
+
+    Gosub, HarvestCheck
 
     Gui, Add, Text, x20 y100, Auto Sell Plants:
     IniRead, AutoSellPlants, config.ini, Settings, AutoSellPlants, 0
@@ -1211,7 +1493,8 @@ SaveSettings:
     ; Save general to INI
     IniWrite, %AutoAlignCamera%, config.ini, Settings, AutoAlignCamera
     IniWrite, %UseEventLanterns%, config.ini, Settings, UseEventLanterns
-    IniWrite, %AutoCollectPlants%, config.ini, Settings, AutoCollectPlants
+    IniWrite, %AutoHarvest%, config.ini, Settings, AutoHarvest
+    IniWrite, %HarvestTimeEdit%, config.ini, Settings, HarvestTime
     IniWrite, %AutoSellPlants%, config.ini, Settings, AutoSellPlants
     IniWrite, %SettingsStart%, config.ini, Settings, SettingsStart
 
@@ -1231,6 +1514,19 @@ SaveSettings:
     Reload ; hotkey changes take effect
 Return
 
+HarvestCheck:
+    Gui, Submit, NoHide
+    if (AutoHarvest) {
+        GuiControl, Show, HarvestEveryText1
+        GuiControl, Show, HarvestTimeEdit
+        GuiControl, Show, HarvestEveryText2
+    } else {
+        GuiControl, Hide, HarvestEveryText1
+        GuiControl, Hide, HarvestTimeEdit
+        GuiControl, Hide, HarvestEveryText2
+    }
+Return
+
 ; Closing GUI exits macro
 GuiClose:
     ExitApp
@@ -1238,7 +1534,11 @@ Return
 
 ; Hotkey Labels
 StartHotkeyLabel() {
-    Gui, Hide
+    Gui, Submit
+
+    ; Start the auto-harvest label
+    SetTimer, AutoHarvestTimer, % (AutoHarvest ? HarvestTime * 60000 : "Off")
+
     Gosub, MainLoop
 }
 
@@ -1271,15 +1571,23 @@ ClearTooltip:
     Tooltip,
 Return
 
+AutoHarvestTimer:
+    global HarvestNow := true
+Return
+
 SeedShopLabel:
     Tooltip, Buying Seeds
-    ClickRelative(679, 133, 1)
+    ClickRelative(654, 138, 1)
     Sleep, 1000
     ClickRelative(0.5, 0.5)
     Sleep, 1000
     Send, {e}
     Sleep, 5000
-    if PixelColorFound(0x53AB3A, 603, 236, 1338, 299, 10) {
+    ClickRelative(1476, 564, 1)
+    Sleep, 1000
+    ClickRelative(1562, 521, 1)
+    Sleep, 1000
+    if PixelColorFound(0x53AB3A, 468, 117, 1461, 216, 10) {
         ToolTip, Seed Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1288,14 +1596,16 @@ SeedShopLabel:
         Sleep, 1000
         Gosub, ClearTooltip
         Sleep, 1000
-        ClickRelative(1298, 264, 1)
+        ClickRelative(1410, 165, 1)
         Sleep, 1000
         CloseRobuxPrompt()
     } else {
         Tooltip, ERROR: Seed Shop Not Opening
+        Sleep, 1000
     }
     
 Return
+
 
 GearShopLabel:
     Tooltip, Buying Gears
@@ -1305,7 +1615,7 @@ GearShopLabel:
     Sleep, 1000
     Send, {e}
     Sleep, 5000
-    if PixelColorFound(0x5289C1, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x538AC2, 470, 119, 1463, 211, 10) {
         ToolTip, Gear Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1317,7 +1627,7 @@ GearShopLabel:
         Tooltip, ERROR: Gear Shop Not Opening
     }
     Sleep, 1000
-    ClickRelative(1298, 264, 1)
+    ClickRelative(1410, 165, 1)
     Sleep, 1000
     CloseRobuxPrompt()
 Return
@@ -1335,7 +1645,7 @@ EggShopLabel:
     Sleep, 2000
     ClickRelative(1576, 452, 1)
     Sleep, 3000
-    if PixelColorFound(0xB0AE8E, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0xB0AE8E, 471, 116, 1466, 220, 10) {
         ToolTip, Egg Shop Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
@@ -1347,7 +1657,7 @@ EggShopLabel:
         Tooltip, ERROR: Egg Shop Not Opening
     }
     Sleep, 1000
-    ClickRelative(1298, 264, 1)
+    ClickRelative(1410, 165, 1)
     Sleep, 1000
     CloseRobuxPrompt()
 Return
@@ -1381,10 +1691,15 @@ AutoAlignCameraLabel:
         SetCameraMode(3)
 
         ; Teleport to shops
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
         Sleep, 1000
         ; Chance camera back
         SetCameraMode(1)
+
+        ; Fix angle due to compressor not being in the sell spot
+        if HoneyGardenActive {
+            RotateCamera(-26.75)
+        }
     }
 
 Return
@@ -1417,15 +1732,16 @@ SeedCraftingLabel(item) {
     }
     Sleep, 2500
     ; Make sure the crafting menu opened
-    if PixelColorFound(0x804FA3, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x7F4EA2, 471, 116, 1450, 220, 10) {
         ToolTip, Crafting Menu Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
         ; Craft the item
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRD")
         Sleep, 100
         ClickRelative(983, 728, 1)
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDEEUUUUUUUUUUUR", 0, 0)
+        Sleep, 1000
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDEEUUUUUUUUUUURRR", 0, 0)
         Sleep, 1000
         ; Find the index of the item in the crafting seed order
         index := 0
@@ -1482,16 +1798,16 @@ CraftingLabel(item) {
     }
     Sleep, 2500
     ; Make sure the crafting menu opened
-    if PixelColorFound(0x804FA3, 603, 236, 1338, 299, 10) {
+    if PixelColorFound(0x7F4EA2, 471, 116, 1450, 220, 10) {
         ToolTip, Crafting Menu Opened
         SetTimer, ClearTooltip, -1500
         Sleep, 1000
         ; Craft the item
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURD")
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRD")
         Sleep, 100
         ClickRelative(983, 728, 1)
         Sleep, 1000
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURDEEUUUUUUUUUUUR", 0, 0)
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDEEUUUUUUUUUUURRR", 0, 0)
         Sleep, 1000
         ; Find the index of the item in the crafting seed order
         index := 0
@@ -1833,7 +2149,7 @@ Return
 
 DetectMapSide:
     Tooltip, Detecting Map Side
-    UINavigation("UUUUUUUUUUUUUUUUUUUUURRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUURRRE")
     Sleep, 1000
     Send, {a down}
     Sleep, 1500
@@ -1841,7 +2157,7 @@ DetectMapSide:
     Sleep, 1000
     Send, {E}
     Sleep, 2000
-    if ImageDetect("SaveSlots.png", 590, 156, 1310, 884, 80) = 1 {
+    if ImageDetect("SaveSlots.png", 629, 264, 1284, 833, 80) = 1 {
         Tooltip, Seeds Side Detected
         MapSide := "Seeds"
         ClickRelative(1255, 227, 1)
@@ -1851,7 +2167,24 @@ DetectMapSide:
     }
 Return
 
-AutoCollectPlantsLabel:
+Harvest() {
+    global PollenRadarSlot
+
+    if (UsePollenRadars && HoneyGardenActive) {
+        Send, {%PollenRadarSlot%}
+        Sleep, 100
+        ClickRelative(0.5, 0.5)
+        Sleep, 3000
+        Send, {%PollenRadarSlot%}
+    } else {
+        Walk("e", 5000, 1000)
+    }
+
+    CloseRobuxPrompt()
+    Sleep, 500
+}
+
+AutoHarvestLabel:
     if (MapSide = "") {
         Gosub, DetectMapSide
     }
@@ -1859,241 +2192,138 @@ AutoCollectPlantsLabel:
     if (MapSide = "Sell") {
         SetCameraMode(3)
         Sleep, 1000
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLE")
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUURRERRELLERRELLERRELLERRELLE")
         Sleep, 1000
         SetCameraMode(1)
+        if HoneyGardenActive {
+            RotateCamera(26.75)
+        }
     }
 
     ; Camera should be good now
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLURRRRRE")
     Sleep, 1000
 
     ; Collect plants
-    Send, {o down}
-    Sleep, 5000
-    Send, {o up}
-    Sleep, 1000
+    Loop, 50 {
+        Send, {WheelDown}
+        Sleep, 50
+    }
 
 
     ; left side
-    Send, {s down}
-    Sleep, 270
-    Send, {s up}
-    Sleep, 500
-    Send, {a down}
-    Sleep, 900
-    Send, {a up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Sleep, 500
+    Tooltip, Harvesting Left Side
+    Walk("s", 270)
+    Walk("a", 900)
+    Harvest()
     ClickRelative(0.64824, 0.21306)
     Sleep, 500
-    Send, {a down}
-    Sleep, 800
-    Send, {a up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Sleep, 500
+
+    Walk("a", (HoneyGardenActive ? 575 : 800))
+    Harvest()
     ClickRelative(0.64824, 0.21306)
     Sleep, 500
-    Send, {a down}
-    Sleep, 600
-    Send, {a up}
-    Sleep, 500
+    
+    Walk("a", 600)
+    Walk("s", 1000)
+    Harvest()
 
-    Send, {s down}
-    Sleep, 1000
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1200
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1300
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1000
-    Send, {s up}
-    Sleep, 500
+    Walk("s", (HoneyGardenActive ? 1150 : 1200))
+    Harvest()
 
-    Send, {d down}
-    Sleep, 900
-    Send, {d up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {d down}
-    Sleep, 800
-    Send, {d up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {d down}
-    Sleep, 600
-    Send, {d up}
-    Sleep, 500
+    Walk("s", 1300)
+    if HoneyGardenActive {
+        Walk("d", 900)
+    }
+    Harvest()
 
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    if !HoneyGardenActive {
+        Walk("s", 1000)
+        Walk("d", 900)
+        Harvest()
+    }
+
+    Walk("d", 800)
+    Harvest()
+    
+    if !HoneyGardenActive {
+        Walk("d", 600)
+        Harvest()
+    }
+
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
     Sleep, 1000
 
     ; right side
-    Send, {s down}
-    Sleep, 270
-    Send, {s up}
-    Sleep, 500
-    Send, {d down}
-    Sleep, 800
-    Send, {d up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {d down}
-    Sleep, 800
-    Send, {d up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {d down}
-    Sleep, 600
-    Send, {d up}
+    Tooltip, Harvesting Right Side
+    
+    Walk("s", 270)
+    Walk("d", 900)
+    Harvest()
+    ClickRelative(0.64824, 0.21306)
     Sleep, 500
 
-    Send, {s down}
-    Sleep, 1000
-    Send, {s up}
+    Walk("d", (HoneyGardenActive ? 575 : 800))
+    Harvest()
+    ClickRelative(0.64824, 0.21306)
     Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1200
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1300
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1000
-    Send, {s up}
-    Sleep, 500
+    
+    Walk("d", 600)
+    Walk("s", 1000)
+    Harvest()
 
-    Send, {a down}
-    Sleep, 900
-    Send, {a up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {a down}
-    Sleep, 800
-    Send, {a up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {a down}
-    Sleep, 600
-    Send, {a up}
-    Sleep, 500
+    Walk("s", (HoneyGardenActive ? 1150 : 1200))
+    Harvest()
 
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    Walk("s", 1300)
+    if HoneyGardenActive {
+        Walk("a", 900)
+    }
+    Harvest()
+
+    if !HoneyGardenActive {
+        Walk("s", 1000)
+        Walk("a", 900)
+        Harvest()
+    }
+
+    Walk("a", 800)
+    Harvest()
+    
+    if !HoneyGardenActive {
+        Walk("a", 600)
+        Harvest()
+    }
+
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
     Sleep, 1000
 
     ; middle
-    Send, {s down}
-    Sleep, 1000
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1200
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1300
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
-    Send, {s down}
-    Sleep, 1000
-    Send, {s up}
-    Sleep, 500
-    Send, {e down}
-    Sleep, 5000
-    Send, {e up}
-    CloseRobuxPrompt()
+    Tooltip, Harvesting Middle
 
-    if (MapSide = "Sell") {
-        SetCameraMode(3)
-        Sleep, 1000
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLERRE")
-        Sleep, 1000
-        SetCameraMode(1)
-        Loop, 25 {
-            Send, {WheelUp}
-            Sleep, 30
-        }
-        Sleep, 1000
-        Loop, 6 {
-            Send, {WheelDown}
-            Sleep, 30
-        }
-        Sleep, 1000
-    } 
+    Walk("s", 1000)
+    Harvest()
+
+    Walk("s", 1000)
+    Harvest()
+
+    Walk("s", 1175)
+    Harvest()
+
+    if !HoneyGardenActive {
+        Walk("s", 1000)
+        Harvest()
+    }
+
+    Gosub, AutoAlignCameraLabel
+
+    ; Restart auto harvest timer
+    HarvestNow := False
+    SetTimer, AutoHarvestTimer, % (AutoHarvest ? HarvestTime * 60000 : "Off")
 Return
 
 AutoSellPlantsLabel:
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRRE")
     Sleep, 2500
     Send, {E}
     Sleep, 3000
@@ -2101,3 +2331,189 @@ AutoSellPlantsLabel:
     Sleep, 3000
 Return
 
+
+HoneySeedShopLabel:
+    Tooltip, Buying Honey Seeds
+    ClickRelative(654, 138, 1)
+    Sleep, 1000
+    ClickRelative(0.5, 0.5)
+    Sleep, 1000
+    Send, {e}
+    Sleep, 5000
+    if PixelColorFound(0xFDDD67, 647, 194, 1368, 294, 10) {
+        ToolTip, Honey Seed Shop Opened
+        SetTimer, ClearTooltip, -1500
+        Sleep, 1000
+        BuyFromShop("HoneySeeds")
+        Tooltip, Honey Seeds Completed
+        Sleep, 1000
+        Gosub, ClearTooltip
+        Sleep, 1000
+        ClickRelative(1319, 248, 1)
+        Sleep, 1000
+        CloseRobuxPrompt()
+    } else {
+        Tooltip, ERROR: Honey Seed Shop Not Opening
+        Sleep, 1000
+    }
+    
+Return
+
+HoneyCoinsLabel:
+    Tooltip, Buying Honey Coin Items
+    ClickRelative(654, 138, 1)
+    Sleep, 1000
+    ClickRelative(0.5, 0.5)
+    Sleep, 1000
+    Send, {e}
+    Sleep, 5000
+    ClickRelative(1474, 422, 1)
+    Sleep, 500
+    if PixelColorFound(0xFDDD67, 647, 194, 1368, 294, 10) {
+        ToolTip, Honey Coin Shop Opened
+        SetTimer, ClearTooltip, -1500
+        Sleep, 1000
+        BuyFromShop("HoneyCoins")
+        Tooltip, Honey Coin Items Completed
+        Sleep, 1000
+        Gosub, ClearTooltip
+        Sleep, 1000
+        ClickRelative(1319, 248, 1)
+        Sleep, 1000
+        CloseRobuxPrompt()
+    } else {
+        Tooltip, ERROR: Honey Coin Shop Not Opening
+        Sleep, 1000
+    }
+    
+Return
+
+RoyalJellyLabel:
+    Tooltip, Buying Royal Jelly Items
+    ClickRelative(654, 138, 1)
+    Sleep, 1000
+    ClickRelative(0.5, 0.5)
+    Sleep, 1000
+    Send, {e}
+    Sleep, 5000
+    ClickRelative(1478, 356, 1)
+    Sleep, 500
+    if PixelColorFound(0xAA4CE5, 647, 194, 1368, 294, 10) {
+        ToolTip, Royal Jelly Shop Opened
+        SetTimer, ClearTooltip, -1500
+        Sleep, 1000
+        BuyFromShop("RoyalJelly")
+        Tooltip, Royal Jelly Items Completed
+        Sleep, 1000
+        Gosub, ClearTooltip
+        Sleep, 1000
+        ClickRelative(1319, 248, 1)
+        Sleep, 1000
+        CloseRobuxPrompt()
+    } else {
+        Tooltip, ERROR: Royal Jelly Shop Not Opening
+        Sleep, 1000
+    }
+    
+Return
+
+CompressLabel:
+    Tooltip, Compressing Plants
+    ClickRelative(1279, 139, 1)
+    Sleep, 1000
+    Send, {e}
+    Sleep, 1000
+    CloseRobuxPrompt()
+    Send, {s down}
+    Sleep, 200
+    Send, {s up}
+    Sleep, 1000
+    Send, {e}
+    Sleep, 2000
+    ClickRelative(1587, 554, 1)
+    Sleep, 5000
+    Tooltip, Compressing Completed
+Return
+
+DetectBeeEggType(x1, y1, x2, y2) {
+    ; Get selected eggs
+    selectedEggs := {}
+
+    for i, item in beeEggs {
+        IniRead, selected, %iniFile%, BeeEggs, BeeEggs%i%
+
+        if (selected == 1) {
+            selectedEggs[item] := "Yes"
+        }
+    }
+
+    if PixelColorFound(0xC7C7C7, x1, y1, x2, y2, 10) {
+        ; Common Egg Detected
+        if selectedEggs.HasKey("Common") {
+            Tooltip, Buying Common Egg
+            Click
+        }
+    } else if PixelColorFound(0x0777FF, x1, y1, x2, y2, 10) {
+        ; Rare Egg Detected
+        if selectedEggs.HasKey("Rare") {
+            Tooltip, Buying Rare Egg
+            Click
+        }
+    } else if PixelColorFound(0xAA55FF, x1, y1, x2, y2, 10) {
+        ; Mythical Egg Detected
+        if selectedEggs.HasKey("Mythical") {
+            Tooltip, Buying Mythical Egg
+            Click
+        }
+    } else if PixelColorFound(0x55007F, x1, y1, x2, y2, 10) {
+        ; Transcendent Egg Detected
+        if selectedEggs.HasKey("Transcendent") {
+            Tooltip, Buying Transcendent Egg
+            Click
+        }
+    }
+}
+
+BeeEggsShopLabel:
+    Tooltip, Buying Bee Eggs
+    ClickRelative(1279, 139, 1)
+    Sleep, 1000
+    Walk("w", 250)
+    Walk("d", 750)
+    Walk("s", 1000)
+    Walk("d", 250)
+    RotateCamera(60)
+    Sleep, 1000
+    Loop, 5 {
+        Send, {WheelDown}
+        Sleep, 100
+    }
+    Sleep, 1000
+
+    ; Detect eggs
+    MouseMoveRelative(940, 280, 1)
+    DetectBeeEggType(804, 220, 1076, 237)
+    Sleep, 1000
+    MouseMoveRelative(778, 311, 1)
+    DetectBeeEggType(670, 273, 773, 289)
+    Sleep, 1000
+    MouseMoveRelative(1087, 314, 1)
+    DetectBeeEggType(976, 272, 1192, 290)
+    Sleep, 1000
+    MouseMoveRelative(811, 377, 1)
+    DetectBeeEggType(724, 344, 896, 360)
+    Sleep, 1000
+    MouseMoveRelative(937, 329, 1)
+    DetectBeeEggType(1398, 542, 1587, 563)
+    Sleep, 1000
+    MouseMoveRelative(1062, 378, 1)
+    DetectBeeEggType(975, 346, 1149, 364)
+    Sleep, 1000
+    Tooltip, Bee Eggs Complete
+    Gosub, AutoAlignCameraLabel
+    Sleep, 1000
+Return
+
+F6::
+RotateCamera(60)
+Return

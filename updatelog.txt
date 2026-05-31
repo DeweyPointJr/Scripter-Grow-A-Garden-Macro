@@ -1,7 +1,15 @@
-Version Smithing0.5
+Version BizzyBees4v1.0
 
 Additions:
- - Added Gem Egg
+ - Added Honey Seeds Shop
+ - Added Honey Coins Shop
+ - Added Royal Jelly Shop
+ - Added Auto Compressor
+ - Added Harvest Using Pollen Radar
 
 Changes:
- - Removed Safari Event
+ - You can now put a set time for how often your crops will be harvested
+ - Changed crafting items
+
+Bug Fixes:
+ - Fixed UI Navigation not working due to the ad rewards button
