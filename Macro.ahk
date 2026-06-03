@@ -5,6 +5,17 @@ SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; GLOBAL VARIABLES
 
+global TASKS := []
+global OneMinuteTasks := [AutoCompressorLabel]
+global FiveMinuteTasks := [SeedShopLabel, HoneySeedShopLabel, GearShopLabel, BeeEggsShopLabel]
+global ThirtyMinuteTasks := [HoneyCoinsLabel, RoyalJellyLabel, EggShopLabel, AutoSellPlants]
+
+global ERRORS := 0
+lastErrors := 0
+
+global NeedsAlignment := false
+global WaitingForTasks := false
+
 global RobloxWindow
 global iniFile := A_ScriptDir "\config.ini"
 
@@ -19,6 +30,7 @@ global HarvestNow := false
 global AutoCompress
 global HoneyGardenActive
 global UsePollenRadars
+global WaitForRestocks
 
 global shopKeys := Object()
 shopKeys["Seeds"] := "Seed"
@@ -57,6 +69,8 @@ IniRead, AutoCompress, %iniFile%, Settings, AutoCompress, 0
 IniRead, HoneyGardenActive, %iniFile%, Settings, HoneyGardenActive, 1
 IniRead, UsePollenRadars, %iniFile%, Settings, UsePollenRadars, 0
 IniRead, PollenRadarSlot, %iniFile%, Settings, PollenRadarSlot, 1
+
+IniRead, WaitForRestocks, %iniFile%, Settings, WaitForRestocks, 1
 
 ; === Bind Hotkeys Dynamically ===
 Hotkey, %StartHotkey%, StartHotkeyLabel
@@ -171,7 +185,7 @@ ClickRelative(relX, relY, coord := 0, noDelay := 0) {
     if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
         WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
         if !RobloxWindow {
-            Tooltip, Roblox window not found!
+            SetStatus("Roblox window not found!")
             return
         }
     }
@@ -192,7 +206,6 @@ ClickRelative(relX, relY, coord := 0, noDelay := 0) {
     ; Get window position
     WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
     if (ErrorLevel || W = 0 || H = 0) {
-        Tooltip, wingetpos failed
         return
     }
 
@@ -229,7 +242,7 @@ MouseMoveRelative(relX, relY, coord := 0, noDelay := 0) {
     if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
         WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
         if !RobloxWindow {
-            Tooltip, Roblox window not found!
+            SetStatus("Roblox window not found!")
             return
         }
     }
@@ -250,7 +263,7 @@ MouseMoveRelative(relX, relY, coord := 0, noDelay := 0) {
     ; Get window position
     WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
     if (ErrorLevel || W = 0 || H = 0) {
-        Tooltip, wingetpos failed
+        SetStatus("wingetpos failed")
         return
     }
 
@@ -296,8 +309,10 @@ RotateCamera(degrees)
     ; Scale from the 1936px reference width
     dx := Round(degrees * (6.0 / 1936.0) * W)
 
-    SendInput {RButton Down}
-    Sleep 20
+    Loop, 25 {
+        Send, {WheelUp}
+        Sleep, 25
+    }
 
     DllCall("mouse_event"
         , "UInt", 0x0001
@@ -306,8 +321,12 @@ RotateCamera(degrees)
         , "UInt", 0
         , "UPtr", 0)
 
-    Sleep 20
-    SendInput {RButton Up}
+    Sleep, 500
+
+    Loop, 6 {
+        Send, {WheelDown}
+        Sleep, 25
+    }
 }
 
 CheckCameraMode() {
@@ -317,6 +336,12 @@ CheckCameraMode() {
     Send, {Esc}
     Sleep, 1000
     Send, {Tab}
+    Sleep, 500
+    if ImageDetect("Video.png", 550, 190, 1380, 880, 80) {
+        ClickRelative(817, 205, 1)
+        Sleep, 250
+    }
+    MouseMoveRelative(792, 275, 1)
     Sleep, 500
     Send, {Down}
 
@@ -331,6 +356,9 @@ CheckCameraMode() {
             return A_Index
         }
     }
+
+    
+
     Loop, 4 {
         Send, {Right}
         Sleep, 100
@@ -342,7 +370,8 @@ CheckCameraMode() {
             return A_Index
         }
     }
-    Tooltip, ERROR: Unable to detect camera mode
+    
+    SetStatus("ERROR: Unable to detect camera mode")
     return 0  ; No match found
 }
 
@@ -355,7 +384,7 @@ SetCameraMode(number) {
         distance := mode - number
         if (distance > 0) {
             Loop, %distance% {
-                Send, {Left}
+                ClickRelative(904, 324, 1)
                 Sleep, 100
             }
         } else if (distance < 0) {
@@ -368,6 +397,7 @@ SetCameraMode(number) {
     }
     Send, {Esc}
     Sleep, 1000
+    MouseMoveRelative(0.5, 0.5)
     Return
 }
 
@@ -375,7 +405,7 @@ CheckRobloxStatusFunc() {
 
     ; Check if Roblox is not open
     if !(WinExist("Roblox")) {
-        Tooltip, Roblox not open. Reconnecting...
+        SetStatus("Roblox not open. Reconnecting...")
         ReconnectToGame()
     }
     
@@ -395,7 +425,7 @@ CheckRobloxStatusFunc() {
         if (WinExist("ahk_class #32770 ahk_exe RobloxPlayerBeta.exe")) {
             errorText := WinGetText, ahk_class #32770 ahk_exe RobloxPlayerBeta.exe
             if (InStr(errorText, "disconnected") || InStr(errorText, "lost connection") || InStr(errorText, "error") || InStr(errorText, "Disconnected")) {
-                Tooltip, Connection error detected. Reconnecting...
+                SetStatus("Connection error detected. Reconnecting...")
                 WinClose, ahk_class #32770 ahk_exe RobloxPlayerBeta.exe
                 Sleep, 1000
                 ReconnectToGame()
@@ -409,7 +439,7 @@ CheckRobloxStatusFunc() {
             try {
                 windowTitle := WinGetTitle, "ahk_id " . hwnd
                 if (InStr(windowTitle, "Disconnected") || InStr(windowTitle, "Lost connection") || InStr(windowTitle, "Error")) {
-                    Tooltip, Game disconnection detected. Reconnecting...
+                    SetStatus("Game disconnection detected. Reconnecting...")
                     ReconnectToGame()
                     return
                 }
@@ -421,25 +451,25 @@ CheckRobloxStatusFunc() {
 ReconnectToGame() {
     global VIP_SERVER_LINK, RECONNECT_DELAY
     if (VIP_SERVER_LINK = "") || (VIP_SERVER_LINK = "Enter a private server link here.") {
-        Tooltip, Cannot reconnect: No VIP Server link
+        SetStatus("Cannot reconnect: No VIP Server link")
         return
     }
     
-    Tooltip, Starting reconnection process...
+    SetStatus("Starting reconnection process...")
     
     ; Close all Roblox processes
     try {
         WinClose, Roblox
         Sleep, 1000
         WinClose, Roblox
-        Tooltip, Roblox closed. Waiting...
+        SetStatus("Roblox closed. Waiting...")
         Sleep, 2000
         
         ; Wait before reopening
         Sleep, %RECONNECT_DELAY%
         
         ; Open VIP Server link
-        Tooltip, Opening Roblox...
+        SetStatus("Opening Roblox...")
         if JoinPublicServer {
             joinLink := "roblox://placeID=126884695634066"
         } else {
@@ -465,19 +495,19 @@ ReconnectToGame() {
             global RobloxWindow
             if (WinExist("Roblox")) {
                 WinMaximize, Roblox
-                Tooltip, Roblox opened successfully. Loading game...
+                SetStatus("Roblox opened successfully. Loading game...")
                 WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
                 Sleep, 25000  ; Wait for game to load
                 ; Check for connection failed
                 imagePath := A_ScriptDir . "\Images\ConnectionFailed.png"
                 ImageSearch, FoundX, FoundY, (((X+702)/1936)*W), (((Y+361)/1056)*H), (((X+1224)/1936)*W), (((Y+718)/1056)*H), *80 %imagePath%
                 if (ErrorLevel = 0) {
-                    Tooltip, Connection Failed. Retrying...
+                    SetStatus("Connection Failed. Retrying...")
                     Sleep, 2500
                     ReconnectToGame()
                 }
                 ; Connection didn't fail. Return to previous function
-                Tooltip, Successfully joined game!
+                SetStatus("Successfully joined game!")
                 ClickRelative(0.5, 0.5)
                 MapSide := ""
                 break
@@ -618,7 +648,7 @@ ImageDetect(imageName, x1, y1, x2, y2, variation = 0) {
     ; Get Roblox window position & size
     WinGetPos, X, Y, W, H, Roblox
     if (ErrorLevel) {
-        Tooltip, Roblox window not found!
+        SetStatus("Roblox window not found!")
         Sleep, 1500
         Tooltip
         return 0
@@ -753,7 +783,7 @@ BuyFromShop(shopName) {
 
         ; Only buy if item is selected
         if selectedNameMap.HasKey(item) {
-            ToolTip, Buying %item%
+            Tooltip, Buying %item%
             noGifting := false
             if (prefix = "Gear" && idx = 7) || (prefix = "Gear" && idx = 10) || (prefix = "Gear" && idx = 11)
                 || (prefix = "Gnome") || (prefix = "Sky") || (prefix = "Honey")
@@ -785,7 +815,7 @@ BuyFromShop(shopName) {
         ClickRelative(1320, 248, 1)
     }
     Sleep, 1000
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRE")
 
     ; Confirm Roblox window still exists
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
@@ -814,8 +844,13 @@ CloseRobuxPrompt() {
     Sleep, 1000
 }
 
+SetStatus(status) {
+    Tooltip, %status%
+    SetTimer, ClearTooltip, -1500
+}
+
 CheckForUpdate() {
-    currentVersion := "BizzyBees4v1.0" ; <-- Set your current version here
+    currentVersion := "BizzyBees4v1.1" ; <-- Set your current version here
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -901,6 +936,8 @@ return
 MainLoop:
     Gui, Destroy
 
+    global NeedsAlignment, WaitingForTasks, ERRORS, WaitForRestocks
+
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
     if (RobloxWindow) {
         WinActivate, ahk_id %RobloxWindow%
@@ -914,165 +951,49 @@ MainLoop:
         }
 
         ; Make sure camera is aligned correctly
-        Gosub, AutoAlignCameraLabel
-        
-        ; Check if any seeds are selected
-        anySeedsSelected := false
-        for i, item in seeds {
-            IniRead, checked, %iniFile%, Seeds, Seed%i%, 0
-            if (checked = "1" || checked = 1) {
-                anySeedsSelected := true
-                break
-            }
+        if (lastErrors != ERRORS) {
+            lastErrors := ERRORS
+            Gosub, AutoAlignCameraLabel
+            NeedsAlignment := false
         }
-        if (anySeedsSelected) {
-            Gosub, SeedShopLabel
+        if (ERRORS > 3) && (AutoReconnect) {
+            ReconnectToGame()
+            ERRORS := 0
         }
 
-        ; Check if any honey seeds are selected
-        anyHoneySeedsSelected := false
-        for i, item in honeySeeds {
-            IniRead, checked, %iniFile%, HoneySeeds, HoneySeeds%i%, 0
-            if (checked = "1" || checked = 1) {
-                anyHoneySeedsSelected := true
-                break
-            }
-        }
-        if (anyHoneySeedsSelected) {
-            Gosub, HoneySeedShopLabel
+        if NeedsAlignment {
+            NeedsAlignment := false
+            Gosub, AutoAlignCameraLabel
         }
 
-        ; Check if any honey coin items are selected
-        anyHoneyCoinsSelected := false
-        for i, item in honeyCoins {
-            IniRead, checked, %iniFile%, HoneyCoins, HoneyCoins%i%, 0
-            if (checked = "1" || checked = 1) {
-                anyHoneyCoinsSelected := true
-                break
-            }
-        }
-        if (anyHoneyCoinsSelected) {
-            Gosub, HoneyCoinsLabel
-        }
-
-        ; Check if any royal jellyu items are selected
-        anyRoyalJellySelected := false
-        for i, item in royalJelly {
-            IniRead, checked, %iniFile%, RoyalJelly, RoyalJelly%i%, 0
-            if (checked = "1" || checked = 1) {
-                anyRoyalJellySelected := true
-                break
-            }
-        }
-        if (anyRoyalJellySelected) {
-            Gosub, RoyalJellyLabel
-        }
-
-        ; Check if any gears are selected (by reading config.ini where SaveGears writes them)
-        anyGearsSelected := false
-        for i, item in gears {
-            IniRead, checked, %iniFile%, Gears, Gear%i%, 0
-            if (checked = "1" || checked = 1) {
-                anyGearsSelected := true
-                break
-            }
-        }
-        if (anyGearsSelected) {
-            Gosub, GearShopLabel
-        }
-
-        ; Check if any eggs are selected (by reading config.ini where SaveEggs writes them)
-        anyEggsSelected := false
-        for i, item in eggs {
-            IniRead, checked, %iniFile%, Eggs, Egg%i%, 0
-            if (checked = "1" || checked = 1) {
-                anyEggsSelected := true
-                break
-            }
-        }
-        if (anyEggsSelected) {
-            Gosub, EggShopLabel
-        }
-
-        ; Check if any bee eggs are selected
-        anyBeeEggsSelected := false
-        for i, item in beeEggs {
-            IniRead, checked, %iniFile%, BeeEggs, BeeEggs%i%, 0
-            if (checked = "1" || checked = 1) {
-                anyBeeEggsSelected := true
-                break
-            }
-        }
-        if (anyBeeEggsSelected) {
-            Gosub, BeeEggsShopLabel
-        }
-
-        ; Check if any seed crafting items are selected (by reading config.ini where SaveSeedCrafting writes them)
-        anySeedCraftingItemsSelected := False
-        selectedItem := ""
-        for i, item in seedCraftingOrder {
-            IniRead, checked, %iniFile%, SeedCrafting, SeedCraftingItem%i%, 0
-            if (checked = "1" || checked = 1) {
-                if (item = "None") {
-                    anySeedCraftingItemsSelected := False
-                    break
-                } else {
-                    selectedItem := item
-                    anySeedCraftingItemsSelected := True
-                    break
-                }
-                
-            }
-        }
-        if (anySeedCraftingItemsSelected = 1) {
-            SeedCraftingLabel(item)
-        }
-
-        ; Check if any crafting items are selected (by reading config.ini where SaveCrafting writes them)
-        anyCraftingItemsSelected := False
-        selectedItem := ""
-        for i, item in craftingOrder {
-            IniRead, checked, %iniFile%, Crafting, CraftingItem%i%, 0
-            if (checked = "1" || checked = 1) {
-                if (item = "None") {
-                    anyCraftingItemsSelected := False
-                    break
-                } else {
-                    selectedItem := item
-                    anyCraftingItemsSelected := True
-                    break
-                }
-                
-            }
-        }
-        if (anyCraftingItemsSelected = 1) {
-            CraftingLabel(item)
-        }
-
-        ; Check if any merchant items are selected
-        if (AnyItemsSelected("Sky") = 1 || AnyItemsSelected("Gnomes") = 1 || AnyItemsSelected("Honey") = 1 || AnyItemsSelected("Summer") = 1 || AnyItemsSelected("Sprinklers") = 1 || AnyItemsSelected("Fall") = 1) {
-            Gosub, MerchantLabel
-        }
-
-        ; Check if any season pass items are selected
-        if (AnyItemsSelected("Pass") = 1) {
-            Gosub, PassShopLabel
-        }
-
-        ; Check if auto collect plants is on
         if (AutoHarvest && HarvestNow) {
             Gosub, AutoHarvestLabel
+            HarvestNow := false
         }
 
-        ; Check if auto compress is on
-        if (AutoCompress) {
-            Gosub, CompressLabel
+        if (TASKS.Length()) {
+            WaitingForTasks := false
+            NextTask := TASKS.RemoveAt(1)
+            Gosub, % NextTask
+        } else {
+            if WaitForRestocks {
+                if !WaitingForTasks {
+                    Gosub, AutoAlignCameraLabel
+                    Sleep, 500
+                    ClickRelative(963, 143, 1)
+                    Sleep, 1000
+                    Tooltip, Waiting For Restocks...
+                }
+                WaitingForTasks := true
+            } else {
+                NeedsAlignment := True
+                Gosub, AddOneMinuteTasks
+                Gosub, AddFiveMinuteTasks
+                Gosub, AddFifteenMinuteTasks
+                Gosub, AddThirtyMinuteTasks
+            }
         }
-
-        ; Check if auto sell plants is on
-        if (AutoSellPlants) {
-            Gosub, AutoSellPlantsLabel
-        }
+        
     } else {
         if (AutoReconnect) {
             CheckRobloxStatusFunc()
@@ -1433,9 +1354,14 @@ SettingsGui:
     Gui, Add, Checkbox, vAutoSellPlants x120 y100
     GuiControl,, AutoSellPlants, %AutoSellPlants%
 
-    Gui, Add, Text, x20 y150, Navigation Settings Start:
+    Gui, Add, Text, x20 y150, Wait For Restocks:
+    IniRead, WaitForRestocks, config.ini, Settings, WaitForRestocks, 1
+    Gui, Add, Checkbox, vWaitForRestocks x120 y150
+    GuiControl,, WaitForRestocks, %WaitForRestocks%
+
+    Gui, Add, Text, x20 y175, Navigation Settings Start:
     IniRead, SettingsStart, config.ini, Settings, SettingsStart, 0
-    Gui, Add, Checkbox, vSettingsStart x150 y150
+    Gui, Add, Checkbox, vSettingsStart x150 y175
     GuiControl,, SettingsStart, %SettingsStart%
 
 
@@ -1534,11 +1460,35 @@ Return
 
 ; Hotkey Labels
 StartHotkeyLabel() {
+    global WaitForRestocks
+
     Gui, Submit
 
-    ; Start the auto-harvest label
+    ; Ensure TASKS exists and remove any stale AutoHarvestLabel entries
+    if (!IsObject(TASKS))
+        TASKS := []
+    i := 1
+    while (i <= TASKS.Length()) {
+        if (TASKS[i] = "AutoHarvestLabel")
+            TASKS.RemoveAt(i)
+        else
+            i++
+    }
+
+    ; Start the auto-harvest timer
     SetTimer, AutoHarvestTimer, % (AutoHarvest ? HarvestTime * 60000 : "Off")
 
+    ; Add tasks
+    if WaitForRestocks {
+        Gosub, AddOneMinuteTasks
+        Gosub, AddFiveMinuteTasks
+        Gosub, AddFifteenMinuteTasks
+        Gosub, AddThirtyMinuteTasks
+    }
+
+    ; Start running
+    global NeedsAlignment := true
+    SetTimer, CheckForNewTasks, -1000
     Gosub, MainLoop
 }
 
@@ -1572,11 +1522,11 @@ ClearTooltip:
 Return
 
 AutoHarvestTimer:
-    global HarvestNow := true
+    HarvestNow := true
 Return
 
 SeedShopLabel:
-    Tooltip, Buying Seeds
+    SetStatus("Buying Seeds")
     ClickRelative(654, 138, 1)
     Sleep, 1000
     ClickRelative(0.5, 0.5)
@@ -1588,19 +1538,17 @@ SeedShopLabel:
     ClickRelative(1562, 521, 1)
     Sleep, 1000
     if PixelColorFound(0x53AB3A, 468, 117, 1461, 216, 10) {
-        ToolTip, Seed Shop Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Seed Shop Opened")
         Sleep, 1000
         BuyFromShop("Seeds")
-        Tooltip, Seeds Completed
-        Sleep, 1000
-        Gosub, ClearTooltip
+        SetStatus("Seeds Completed")
         Sleep, 1000
         ClickRelative(1410, 165, 1)
         Sleep, 1000
         CloseRobuxPrompt()
     } else {
-        Tooltip, ERROR: Seed Shop Not Opening
+        SetStatus("ERROR: Seed Shop Not Opening")
+        global ERRORS += 1
         Sleep, 1000
     }
     
@@ -1608,7 +1556,7 @@ Return
 
 
 GearShopLabel:
-    Tooltip, Buying Gears
+    SetStatus("Buying Gears")
     Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5)
@@ -1616,15 +1564,13 @@ GearShopLabel:
     Send, {e}
     Sleep, 5000
     if PixelColorFound(0x538AC2, 470, 119, 1463, 211, 10) {
-        ToolTip, Gear Shop Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Gear Shop Opened")
         Sleep, 1000
         BuyFromShop("Gears")
-        Tooltip, Gears Completed
-        Sleep, 1000
-        Gosub, ClearTooltip
+        SetStatus("Gears Completed")
     } else {
-        Tooltip, ERROR: Gear Shop Not Opening
+        global ERRORS += 1
+        SetStatus("ERROR: Gear Shop Not Opening")
     }
     Sleep, 1000
     ClickRelative(1410, 165, 1)
@@ -1633,7 +1579,7 @@ GearShopLabel:
 Return
 
 EggShopLabel:
-    Tooltip, Buying Eggs
+    SetStatus("Buying Eggs")
     Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5)
@@ -1647,14 +1593,13 @@ EggShopLabel:
     Sleep, 3000
     if PixelColorFound(0xB0AE8E, 471, 116, 1466, 220, 10) {
         ToolTip, Egg Shop Opened
-        SetTimer, ClearTooltip, -1500
         Sleep, 1000
         BuyFromShop("Eggs")
-        Tooltip, Eggs Completed
+        SetStatus("Eggs Completed")
         Sleep, 1000
-        Gosub, ClearTooltip
     } else {
-        Tooltip, ERROR: Egg Shop Not Opening
+        global ERRORS += 1
+        SetStatus("ERROR: Egg Shop Not Opening")
     }
     Sleep, 1000
     ClickRelative(1410, 165, 1)
@@ -1709,13 +1654,12 @@ SeedCraftingLabel(item) {
 
     ; Make sure the item is not none
     if (item = "None") {
-        Tooltip, Shouldn't have been run
+        SetStatus("Shouldn't have been run")
         Return
     }
 
     ; Now start the actual crafting
-    Tooltip, Crafting %item%
-    SetTimer, ClearTooltip, -1500
+    SetStatus("Crafting " . %item%)
     Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5, 0)
@@ -1733,15 +1677,15 @@ SeedCraftingLabel(item) {
     Sleep, 2500
     ; Make sure the crafting menu opened
     if PixelColorFound(0x7F4EA2, 471, 116, 1450, 220, 10) {
-        ToolTip, Crafting Menu Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Crafting Menu Opened")
+        
         Sleep, 1000
         ; Craft the item
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRD")
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUD")
         Sleep, 100
         ClickRelative(983, 728, 1)
         Sleep, 1000
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDEEUUUUUUUUUUURRR", 0, 0)
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRDEEUUUUUUUUUUURR", 0, 0)
         Sleep, 1000
         ; Find the index of the item in the crafting seed order
         index := 0
@@ -1761,11 +1705,11 @@ SeedCraftingLabel(item) {
         Sleep, 1000
         Send, {e}
         Sleep, 1000
-        Tooltip, Seed Crafting Completed
+        SetStatus("Seed Crafting Completed")
         Sleep, 1000
         Gosub, ClearTooltip
     } else {
-        Tooltip, ERROR: Crafting Menu Not Opening
+        SetStatus("ERROR: Crafting Menu Not Opening")
     }
 Return
 }
@@ -1775,13 +1719,13 @@ CraftingLabel(item) {
 
     ; Make sure the item is not none
     if (item = "None") {
-        Tooltip, Shouldn't have been run
+        SetStatus("Shouldn't have been run")
         Return
     }
 
     ; Now start the actual crafting
-    Tooltip, Crafting %item%
-    SetTimer, ClearTooltip, -1500
+    SetStatus("Crafting " . %item%)
+    
     Send, {%RecallSlot%}
     Sleep, 1000
     ClickRelative(0.5, 0.5, 0)
@@ -1799,15 +1743,15 @@ CraftingLabel(item) {
     Sleep, 2500
     ; Make sure the crafting menu opened
     if PixelColorFound(0x7F4EA2, 471, 116, 1450, 220, 10) {
-        ToolTip, Crafting Menu Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Crafting Menu Opened")
+        
         Sleep, 1000
         ; Craft the item
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRD")
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRD")
         Sleep, 100
         ClickRelative(983, 728, 1)
         Sleep, 1000
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRRDEEUUUUUUUUUUURRR", 0, 0)
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRDEEUUUUUUUUUUURR", 0, 0)
         Sleep, 1000
         ; Find the index of the item in the crafting seed order
         index := 0
@@ -1827,11 +1771,12 @@ CraftingLabel(item) {
         Sleep, 1000
         Send, {e}
         Sleep, 1000
-        Tooltip, Crafting Completed
+        SetStatus("Crafting Completed")
         Sleep, 1000
         Gosub, ClearTooltip
     } else {
-        Tooltip, ERROR: Crafting Menu Not Opening
+        ERRORS += 1
+        SetStatus("ERROR: Crafting Menu Not Opening")
     }
 Return
 }
@@ -1970,7 +1915,7 @@ ToggleSelectAll:
 Return
 
 MerchantLabel:
-    Tooltip, Checking for Merchants
+    SetStatus("Checking for Merchants")
     SetTimer, ClearTooltip, -2000
     UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUURE")
     Sleep, 1000
@@ -1983,34 +1928,34 @@ MerchantLabel:
     
 
     if PixelColorFound(0x11B3F9, 603, 236, 1338, 299, 10) {
-        Tooltip, Merchant Opened. Detecting which merchant
+        SetStatus("Merchant Opened. Detecting which merchant")
         if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
-            Tooltip, Gnome Merchant Detected
+            SetStatus("Gnome Merchant Detected")
             if AnyItemsSelected("Gnomes") {
                 BuyFromShop("Gnomes")
             }
         } else if (PixelColorFound(0x617196, 641, 355, 821, 535, 3)) {
-            Tooltip, Sky Merchant Detected
+            SetStatus("Sky Merchant Detected")
             if AnyItemsSelected("Sky") {
                 BuyFromShop("Sky")
             }
         } else if (PixelColorFound(0x009CCD, 641, 355, 821, 535, 3)) {
-            Tooltip, Honey Merchant Detected
+            SetStatus("Honey Merchant Detected")
             if (AnyItemsSelected("Honey")) {
                 BuyFromShop("Honey")
             }
         } else if (PixelColorFound(0x00934C, 641, 355, 821, 535, 3)) {
-            Tooltip, Summer Merchant Detected
+            SetStatus("Summer Merchant Detected")
             if (AnyItemsSelected("Summer")) {
                 BuyFromShop("Summer")
             }
         } else if (PixelColorFound(0xC5C83F, 641, 355, 821, 535, 3)) {
-            Tooltip, Sprinkler Merchant Detected
+            SetStatus("Sprinkler Merchant Detected")
             if (AnyItemsSelected("Sprinklers")) {
                 BuyFromShop("Sprinklers")
             }
         } else if (PixelColorFound(0xB37B21, 641, 355, 821, 535, 3)) {
-            Tooltip, Fall Merchant 
+            SetStatus("Fall Merchant")
             if AnyItemsSelected("Fall") {
                 BuyFromShop("Fall")
             }
@@ -2020,37 +1965,37 @@ MerchantLabel:
         Sleep, 2500
         if PixelColorFound(0x11B3F9, 603, 236, 1338, 299, 10) {
             if PixelColorFound(0x973434, 641, 355, 821, 535, 3) {
-            Tooltip, Gnome Merchant Detected
+            SetStatus("Gnome Merchant Detected")
             if AnyItemsSelected("Gnomes") {
                 BuyFromShop("Gnomes")
             }
         } else if (PixelColorFound(0x617196, 641, 355, 821, 535, 3)) {
-            Tooltip, Sky Merchant Detected
+            SetStatus("Sky Merchant Detected")
             if AnyItemsSelected("Sky") {
                 BuyFromShop("Sky")
             }
         } else if (PixelColorFound(0x009CCD, 641, 355, 821, 535, 3)) {
-            Tooltip, Honey Merchant Detected
+            SetStatus("Honey Merchant Detected")
             if (AnyItemsSelected("Honey")) {
                 BuyFromShop("Honey")
             }
         } else if (PixelColorFound(0x00934C, 641, 355, 821, 535, 3)) {
-            Tooltip, Summer Merchant Detected
+            SetStatus("Summer Merchant Detected")
             if (AnyItemsSelected("Summer")) {
                 BuyFromShop("Summer")
             }
         } else if (PixelColorFound(0xC5C83F, 641, 355, 821, 535, 3)) {
-            Tooltip, Sprinkler Merchant Detected
+            SetStatus("Sprinkler Merchant Detected")
             if (AnyItemsSelected("Sprinklers")) {
                 BuyFromShop("Sprinklers")
             }
         } else if (PixelColorFound(0xB37B21, 641, 355, 821, 535, 3)) {
-            Tooltip, Fall Merchant 
+            SetStatus("Fall Merchant")
             if AnyItemsSelected("Fall") {
                 BuyFromShop("Fall")
             }
         } else {
-            Tooltip, No Merchant Detected
+            SetStatus("No Merchant Detected")
             SetTimer, ClearTooltip, -1000
             Sleep, 1000
         }
@@ -2063,8 +2008,8 @@ MerchantLabel:
 Return
 
 PassShopLabel:
-    Tooltip, Buying from Pass Shop
-    SetTimer, ClearTooltip, -1500
+    SetStatus("Buying from Pass Shop")
+    
     
     global doubleScrolls, itemPositions, seeds, gears, iniFile, ahopa
 
@@ -2076,7 +2021,7 @@ PassShopLabel:
     }
 
     ; First use UI navigation to get to the first item
-    UINavigation("LLLLLLLLLLLLLLLLLLLLUEUUUUUUUUUUUUUUUURRRRDRREDDD")
+    UINavigation("LLLLLLLLLLLLLLLLLLLLUEUUUUUUUUUUUUUUUURRRDRREDDD")
     Sleep, 100
     ClickRelative(1211, 850, 1)
     Sleep, 1000
@@ -2115,7 +2060,7 @@ PassShopLabel:
 
         ; If selected, click its position
         if selectedNameMap.HasKey(item) {
-            ToolTip, Buying %item%
+            SetStatus("Buying " . %item%)
             noGifting := false
             if (prefix = "Pass") {
                 noGifting := true
@@ -2148,8 +2093,8 @@ PassShopLabel:
 Return
 
 DetectMapSide:
-    Tooltip, Detecting Map Side
-    UINavigation("UUUUUUUUUUUUUUUUUUUUURRRE")
+    SetStatus("Detecting Map Side")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUURRE")
     Sleep, 1000
     Send, {a down}
     Sleep, 1500
@@ -2158,11 +2103,11 @@ DetectMapSide:
     Send, {E}
     Sleep, 2000
     if ImageDetect("SaveSlots.png", 629, 264, 1284, 833, 80) = 1 {
-        Tooltip, Seeds Side Detected
+        SetStatus("Seeds Side Detected")
         MapSide := "Seeds"
         ClickRelative(1255, 227, 1)
     } else {
-        Tooltip, Sell Side Detected
+        SetStatus("Sell Side Detected")
         MapSide := "Sell"
     }
 Return
@@ -2201,7 +2146,7 @@ AutoHarvestLabel:
     }
 
     ; Camera should be good now
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLURRRRRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLURRRRE")
     Sleep, 1000
 
     ; Collect plants
@@ -2212,7 +2157,7 @@ AutoHarvestLabel:
 
 
     ; left side
-    Tooltip, Harvesting Left Side
+    SetStatus("Harvesting Left Side")
     Walk("s", 270)
     Walk("a", 900)
     Harvest()
@@ -2251,11 +2196,11 @@ AutoHarvestLabel:
         Harvest()
     }
 
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
     Sleep, 1000
 
     ; right side
-    Tooltip, Harvesting Right Side
+    SetStatus("Harvesting Right Side")
     
     Walk("s", 270)
     Walk("d", 900)
@@ -2295,11 +2240,11 @@ AutoHarvestLabel:
         Harvest()
     }
 
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
     Sleep, 1000
 
     ; middle
-    Tooltip, Harvesting Middle
+    SetStatus("Harvesting Middle")
 
     Walk("s", 1000)
     Harvest()
@@ -2315,7 +2260,7 @@ AutoHarvestLabel:
         Harvest()
     }
 
-    Gosub, AutoAlignCameraLabel
+    global NeedsAlignment := true
 
     ; Restart auto harvest timer
     HarvestNow := False
@@ -2323,7 +2268,7 @@ AutoHarvestLabel:
 Return
 
 AutoSellPlantsLabel:
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRRE")
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
     Sleep, 2500
     Send, {E}
     Sleep, 3000
@@ -2333,7 +2278,7 @@ Return
 
 
 HoneySeedShopLabel:
-    Tooltip, Buying Honey Seeds
+    SetStatus("Buying Honey Seeds")
     ClickRelative(654, 138, 1)
     Sleep, 1000
     ClickRelative(0.5, 0.5)
@@ -2341,11 +2286,11 @@ HoneySeedShopLabel:
     Send, {e}
     Sleep, 5000
     if PixelColorFound(0xFDDD67, 647, 194, 1368, 294, 10) {
-        ToolTip, Honey Seed Shop Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Honey Seed Shop Opened")
+        
         Sleep, 1000
         BuyFromShop("HoneySeeds")
-        Tooltip, Honey Seeds Completed
+        SetStatus("Honey Seeds Completed")
         Sleep, 1000
         Gosub, ClearTooltip
         Sleep, 1000
@@ -2353,14 +2298,15 @@ HoneySeedShopLabel:
         Sleep, 1000
         CloseRobuxPrompt()
     } else {
-        Tooltip, ERROR: Honey Seed Shop Not Opening
+        global ERRORS += 1
+        SetStatus("ERROR: Honey Seed Shop Not Opening")
         Sleep, 1000
     }
     
 Return
 
 HoneyCoinsLabel:
-    Tooltip, Buying Honey Coin Items
+    SetStatus("Buying Honey Coin Items")
     ClickRelative(654, 138, 1)
     Sleep, 1000
     ClickRelative(0.5, 0.5)
@@ -2370,11 +2316,11 @@ HoneyCoinsLabel:
     ClickRelative(1474, 422, 1)
     Sleep, 500
     if PixelColorFound(0xFDDD67, 647, 194, 1368, 294, 10) {
-        ToolTip, Honey Coin Shop Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Honey Coin Shop Opened")
+        
         Sleep, 1000
         BuyFromShop("HoneyCoins")
-        Tooltip, Honey Coin Items Completed
+        SetStatus("Honey Coin Items Completed")
         Sleep, 1000
         Gosub, ClearTooltip
         Sleep, 1000
@@ -2382,14 +2328,15 @@ HoneyCoinsLabel:
         Sleep, 1000
         CloseRobuxPrompt()
     } else {
-        Tooltip, ERROR: Honey Coin Shop Not Opening
+        global ERRORS += 1
+        SetStatus("ERROR: Honey Coin Shop Not Opening")
         Sleep, 1000
     }
     
 Return
 
 RoyalJellyLabel:
-    Tooltip, Buying Royal Jelly Items
+    SetStatus("Buying Royal Jelly Items")
     ClickRelative(654, 138, 1)
     Sleep, 1000
     ClickRelative(0.5, 0.5)
@@ -2399,11 +2346,11 @@ RoyalJellyLabel:
     ClickRelative(1478, 356, 1)
     Sleep, 500
     if PixelColorFound(0xAA4CE5, 647, 194, 1368, 294, 10) {
-        ToolTip, Royal Jelly Shop Opened
-        SetTimer, ClearTooltip, -1500
+        SetStatus("Royal Jelly Shop Opened")
+        
         Sleep, 1000
         BuyFromShop("RoyalJelly")
-        Tooltip, Royal Jelly Items Completed
+        SetStatus("Royal Jelly Items Completed")
         Sleep, 1000
         Gosub, ClearTooltip
         Sleep, 1000
@@ -2411,14 +2358,15 @@ RoyalJellyLabel:
         Sleep, 1000
         CloseRobuxPrompt()
     } else {
-        Tooltip, ERROR: Royal Jelly Shop Not Opening
+        global ERRORS += 1
+        SetStatus("ERROR: Royal Jelly Shop Not Opening")
         Sleep, 1000
     }
     
 Return
 
 CompressLabel:
-    Tooltip, Compressing Plants
+    SetStatus("Compressing Plants")
     ClickRelative(1279, 139, 1)
     Sleep, 1000
     Send, {e}
@@ -2432,7 +2380,7 @@ CompressLabel:
     Sleep, 2000
     ClickRelative(1587, 554, 1)
     Sleep, 5000
-    Tooltip, Compressing Completed
+    SetStatus("Compressing Completed")
 Return
 
 DetectBeeEggType(x1, y1, x2, y2) {
@@ -2450,32 +2398,32 @@ DetectBeeEggType(x1, y1, x2, y2) {
     if PixelColorFound(0xC7C7C7, x1, y1, x2, y2, 10) {
         ; Common Egg Detected
         if selectedEggs.HasKey("Common") {
-            Tooltip, Buying Common Egg
+            SetStatus("Buying Common Egg")
             Click
         }
     } else if PixelColorFound(0x0777FF, x1, y1, x2, y2, 10) {
         ; Rare Egg Detected
         if selectedEggs.HasKey("Rare") {
-            Tooltip, Buying Rare Egg
+            SetStatus("Buying Rare Egg")
             Click
         }
     } else if PixelColorFound(0xAA55FF, x1, y1, x2, y2, 10) {
         ; Mythical Egg Detected
         if selectedEggs.HasKey("Mythical") {
-            Tooltip, Buying Mythical Egg
+            SetStatus("Buying Mythical Egg")
             Click
         }
     } else if PixelColorFound(0x55007F, x1, y1, x2, y2, 10) {
         ; Transcendent Egg Detected
         if selectedEggs.HasKey("Transcendent") {
-            Tooltip, Buying Transcendent Egg
+            SetStatus("Buying Transcendent Egg")
             Click
         }
     }
 }
 
 BeeEggsShopLabel:
-    Tooltip, Buying Bee Eggs
+    SetStatus("Buying Bee Eggs")
     ClickRelative(1279, 139, 1)
     Sleep, 1000
     Walk("w", 250)
@@ -2509,9 +2457,201 @@ BeeEggsShopLabel:
     MouseMoveRelative(1062, 378, 1)
     DetectBeeEggType(975, 346, 1149, 364)
     Sleep, 1000
-    Tooltip, Bee Eggs Complete
-    Gosub, AutoAlignCameraLabel
+    SetStatus("Bee Eggs Complete")
+    global NeedsAlignment := true
     Sleep, 1000
+Return
+
+CheckForNewTasks:
+    FormatTime, curMin,, m
+    FormatTime, curSec,, s
+
+    curMin := curMin + 0
+    curSec := curSec + 0
+
+    ; Check at the start of a minute
+    if (curSec = 0) {
+        Gosub, AddOneMinuteTasks
+
+        if (Mod(curMin, 5) = 0)
+            Gosub, AddFiveMinuteTasks
+
+        if (Mod(curMin, 15) = 0)
+            Gosub, AddFifteenMinuteTasks
+
+        if (Mod(curMin, 30) = 0)
+            Gosub, AddThirtyMinuteTasks
+    }
+
+    SetTimer, CheckForNewTasks, -1000
+
+Return
+
+AddOneMinuteTasks:
+    ; Check if auto compress is on
+    if (AutoCompress) {
+        TASKS.InsertAt(1, "CompressLabel")
+    }
+Return
+
+AddFiveMinuteTasks:
+    ; Check if any seeds are selected
+    anySeedsSelected := false
+    for i, item in seeds {
+        IniRead, checked, %iniFile%, Seeds, Seed%i%, 0
+        if (checked = "1" || checked = 1) {
+            anySeedsSelected := true
+            break
+        }
+    }
+    if (anySeedsSelected) {
+        TASKS.Push("SeedShopLabel")
+    }
+
+    ; Check if any honey seeds are selected
+    anyHoneySeedsSelected := false
+    for i, item in honeySeeds {
+        IniRead, checked, %iniFile%, HoneySeeds, HoneySeeds%i%, 0
+        if (checked = "1" || checked = 1) {
+            anyHoneySeedsSelected := true
+            break
+        }
+    }
+    if (anyHoneySeedsSelected) {
+        TASKS.Push("HoneySeedShopLabel")
+    }
+
+    ; Check if any gears are selected (by reading config.ini where SaveGears writes them)
+    anyGearsSelected := false
+    for i, item in gears {
+        IniRead, checked, %iniFile%, Gears, Gear%i%, 0
+        if (checked = "1" || checked = 1) {
+            anyGearsSelected := true
+            break
+        }
+    }
+    if (anyGearsSelected) {
+        TASKS.Push("GearShopLabel")
+    }
+
+    ; Check if any bee eggs are selected
+    anyBeeEggsSelected := false
+    for i, item in beeEggs {
+        IniRead, checked, %iniFile%, BeeEggs, BeeEggs%i%, 0
+        if (checked = "1" || checked = 1) {
+            anyBeeEggsSelected := true
+            break
+        }
+    }
+    if (anyBeeEggsSelected) {
+        TASKS.Push("BeeEggsShopLabel")
+    }
+    ; Check if any season pass items are selected
+    if (AnyItemsSelected("Pass") = 1) {
+        TASKS.Push("PassShopLabel")
+    }
+    
+Return
+
+AddFifteenMinuteTasks:
+    TASKS.Push("DoCrafting")
+Return
+
+AddThirtyMinuteTasks:
+    ; Check if any honey coin items are selected
+    anyHoneyCoinsSelected := false
+    for i, item in honeyCoins {
+        IniRead, checked, %iniFile%, HoneyCoins, HoneyCoins%i%, 0
+        if (checked = "1" || checked = 1) {
+            anyHoneyCoinsSelected := true
+            break
+        }
+    }
+    if (anyHoneyCoinsSelected) {
+        TASKS.Push("HoneyCoinsLabel")
+    }
+
+    ; Check if any royal jellyu items are selected
+    anyRoyalJellySelected := false
+    for i, item in royalJelly {
+        IniRead, checked, %iniFile%, RoyalJelly, RoyalJelly%i%, 0
+        if (checked = "1" || checked = 1) {
+            anyRoyalJellySelected := true
+            break
+        }
+    }
+    if (anyRoyalJellySelected) {
+        TASKS.Push("RoyalJellyLabel")
+    }
+
+    
+
+    ; Check if any eggs are selected (by reading config.ini where SaveEggs writes them)
+    anyEggsSelected := false
+    for i, item in eggs {
+        IniRead, checked, %iniFile%, Eggs, Egg%i%, 0
+        if (checked = "1" || checked = 1) {
+            anyEggsSelected := true
+            break
+        }
+    }
+    if (anyEggsSelected) {
+        TASKS.Push("EggShopLabel")
+    }
+
+    ; Check if any merchant items are selected
+    if (AnyItemsSelected("Sky") = 1 || AnyItemsSelected("Gnomes") = 1 || AnyItemsSelected("Honey") = 1 || AnyItemsSelected("Summer") = 1 || AnyItemsSelected("Sprinklers") = 1 || AnyItemsSelected("Fall") = 1) {
+        TASKS.Push("MerchantLabel")
+    }
+
+    ; Check if auto sell plants is on
+    if (AutoSellPlants) {
+        TASKS.Push("AutoSellPlantsLabel")
+    }
+Return
+
+DoCrafting:
+    ; Check if any seed crafting items are selected (by reading config.ini where SaveSeedCrafting writes them)
+    anySeedCraftingItemsSelected := False
+    selectedItem := ""
+    for i, item in seedCraftingOrder {
+        IniRead, checked, %iniFile%, SeedCrafting, SeedCraftingItem%i%, 0
+        if (checked = "1" || checked = 1) {
+            if (item = "None") {
+                anySeedCraftingItemsSelected := False
+                break
+            } else {
+                selectedItem := item
+                anySeedCraftingItemsSelected := True
+                break
+            }
+            
+        }
+    }
+    if (anySeedCraftingItemsSelected = 1) {
+        SeedCraftingLabel(item)
+    }
+
+    ; Check if any crafting items are selected (by reading config.ini where SaveCrafting writes them)
+    anyCraftingItemsSelected := False
+    selectedItem := ""
+    for i, item in craftingOrder {
+        IniRead, checked, %iniFile%, Crafting, CraftingItem%i%, 0
+        if (checked = "1" || checked = 1) {
+            if (item = "None") {
+                anyCraftingItemsSelected := False
+                break
+            } else {
+                selectedItem := item
+                anyCraftingItemsSelected := True
+                break
+            }
+            
+        }
+    }
+    if (anyCraftingItemsSelected = 1) {
+        CraftingLabel(item)
+    }
 Return
 
 F6::
