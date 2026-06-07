@@ -13,7 +13,7 @@ global ThirtyMinuteTasks := [HoneyCoinsLabel, RoyalJellyLabel, EggShopLabel, Aut
 global ERRORS := 0
 lastErrors := 0
 
-global NeedsAlignment := false
+global NeedsAlignment := true
 global WaitingForTasks := false
 
 global RobloxWindow
@@ -31,6 +31,17 @@ global AutoCompress
 global HoneyGardenActive
 global UsePollenRadars
 global WaitForRestocks
+
+global FuelCampfire
+global FuelNow := false
+
+global CampfireItem1
+global CampfireItem2
+global CampfireItem3
+
+global CampfireLevel := 0
+
+global AdRewards := false
 
 global shopKeys := Object()
 shopKeys["Seeds"] := "Seed"
@@ -70,6 +81,12 @@ IniRead, HoneyGardenActive, %iniFile%, Settings, HoneyGardenActive, 1
 IniRead, UsePollenRadars, %iniFile%, Settings, UsePollenRadars, 0
 IniRead, PollenRadarSlot, %iniFile%, Settings, PollenRadarSlot, 1
 
+IniRead, FuelCampfire, %iniFile%, Campfire, FuelCampfire, 0
+IniRead, FuelTime, %iniFile%, Campfire, FuelTime, 15
+IniRead, CampfireItem1, %iniFile%, Campfire, CampfireItem1, "None"
+IniRead, CampfireItem2, %iniFile%, Campfire, CampfireItem2, "None"
+IniRead, CampfireItem3, %iniFile%, Campfire, CampfireItem3, "None"
+
 IniRead, WaitForRestocks, %iniFile%, Settings, WaitForRestocks, 1
 
 ; === Bind Hotkeys Dynamically ===
@@ -89,14 +106,20 @@ IniRead, JoinPublicServer, %iniFile%, Settings, JoinPublicServer, 0
 global backpackBtnX
 global backpackBtnY
 
-IniRead, backpackBtnX, %iniFile%, Settings, backpackBtnX, 204
+IniRead, backpackBtnX, %iniFile%, Settings, backpackBtnX, 296
 IniRead, backpackBtnY, %iniFile%, Settings, backpackBtnY, 53
+
+global favoriteBtnX
+global favoriteBtnY
+
+IniRead, favoriteBtnX, %iniFile%, Settings, favoriteBtnX, 1077
+IniRead, favoriteBtnY, %iniFile%, Settings, favoriteBtnY, 666
 
 
 ; ITEMS
 global seeds := ["Carrot", "Strawberry", "Blueberry", "Buttercup", "Tomato", "Corn", "Daffodil", "Watermelon", "Pumpkin", "Apple", "Bamboo", "Coconut", "Cactus"
                 , "Dragon Fruit", "Mango", "Grape", "Mushroom", "Pepper", "Cacao", "Sunflower", "Beanstalk", "Ember Lily", "Sugar Apple", "Burning Bud", "Giant Pinecone"
-                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle", "Octobloom", "Alien Apple", "Pollenvine"]
+                , "Elder Strawberry", "Romanesco", "Crimson Thorn", "Zebrazinkle", "Octobloom", "Alien Apple", "Firefly Spiral"]
 
 global gears := ["Watering Can", "Basic Sprinkler", "Advanced Sprinkler", "Godly Sprinkler", "Master Sprinkler", "Grandmaster Sprinkler", "Trowel", "Recall Wrench", "Medium Toy", "Pet Name Reroller", "Pet Lead"
                 , "Medium Treat", "Magnifying Glass", "Cleaning Spray", "Cleansing Pet Shard", "Favorite Tool", "Harvest Tool", "Friendship Pot", "Levelup Lollipop", "Trading Ticket"]
@@ -130,6 +153,9 @@ global beeEggs := ["Common", "Rare", "Mythical", "Transcendent"]
 global seedCraftingOrder := ["None", "Egg Melon", "Mandrake", "Evo Apple I", "Evo Apple II", "Evo Apple III", "Evo Apple IV", "Olive", "Hollow Bamboo", "Yarrow"]
 
 global craftingOrder := ["None", "Lightning Rod", "Tanning Mirror", "Reclaimer", "Event Lantern", "Small Toy", "Small Treat", "Pet Pouch", "Silver Ingot", "Gold Ingot", "Silver Piggy", "Golden Piggy", "Chimera Stone", "Black Spotty Egg"]
+
+global campfireCraftingOrder := ["None", "Firepit Flower", "Cauliflower", "Campfire Crate", "Common Summer Egg", "Green Apple", "Avocado", "Super Watering Can", "Areaclaimer", "Banana", "Kiwi", "Hearth Reed" 
+                                , "Rare Summer Egg", "Prickly Pear", "Feijoa", "Paradise Egg", "Energy Chew", "Pitcher Plant", "Campfire Egg"]
 
 global pass := ["Season 5 Crate", "Hammer of Harvest", "Garden Lantern", "Season 5 Seed Pack", "Levelup Lollipop", "Grow All", "Pinkfruit Palm"]
 
@@ -178,8 +204,13 @@ shopPrefixes["HoneySeeds"] := "HoneySeeds"
 shopPrefixes["BeeEggs"] := "BeeEggs"
 
 ; FUNCTIONS
+; --- Purchase reporting ---
+global BoughtList := {}
+global lastReportHour := ""
+
 ClickRelative(relX, relY, coord := 0, noDelay := 0) {
     global RobloxWindow
+    CoordMode, Window
 
     ; Ensure RobloxWindow is valid
     if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
@@ -235,7 +266,7 @@ ClickRelative(relX, relY, coord := 0, noDelay := 0) {
     SendMode %oldMode%
 }
 
-MouseMoveRelative(relX, relY, coord := 0, noDelay := 0) {
+MouseMoveRelative(relX, relY, coord := 0, noDelay := 0, activate := 1) {
     global RobloxWindow
 
     ; Ensure RobloxWindow is valid
@@ -248,16 +279,18 @@ MouseMoveRelative(relX, relY, coord := 0, noDelay := 0) {
     }
 
     ; Activate & restore window
-    WinActivate, ahk_id %RobloxWindow%
-    WinWaitActive, ahk_id %RobloxWindow%, , 2
-    WinGet, winState, MinMax, ahk_id %RobloxWindow%
-    if (winState = -1) {
-        ; Window is minimized, restore it
-        WinRestore, ahk_id %RobloxWindow%
-    }
+    if (activate) {
+        WinActivate, ahk_id %RobloxWindow%
+        WinWaitActive, ahk_id %RobloxWindow%, , 2
+        WinGet, winState, MinMax, ahk_id %RobloxWindow%
+        if (winState = -1) {
+            ; Window is minimized, restore it
+            WinRestore, ahk_id %RobloxWindow%
+        }
 
-    WinActivate, ahk_id %RobloxWindow%
-    WinWaitActive, ahk_id %RobloxWindow%, , 2
+        WinActivate, ahk_id %RobloxWindow%
+        WinWaitActive, ahk_id %RobloxWindow%, , 2
+    }
 
 
     ; Get window position
@@ -337,7 +370,7 @@ CheckCameraMode() {
     Sleep, 1000
     Send, {Tab}
     Sleep, 500
-    if ImageDetect("Video.png", 550, 190, 1380, 880, 80) {
+    if ImageDetect("Video.png", 550, 240, 755, 336, 80) {
         ClickRelative(817, 205, 1)
         Sleep, 250
     }
@@ -399,6 +432,56 @@ SetCameraMode(number) {
     Sleep, 1000
     MouseMoveRelative(0.5, 0.5)
     Return
+}
+
+CheckFavoriteMode() {
+    global backpackBtnX, backpackBtnY, favoriteBtnX, favoriteBtnY
+
+    if if PixelColorFound(0xFF0404, favoriteBtnX - 5, favoriteBtnY - 5, favoriteBtnX + 5, favoriteBtnY + 5, 10, 0) {
+        SetStatus("3 detected")
+        Sleep, 1000
+        return 3
+    } else if PixelColorFound(0xFFFFFF, favoriteBtnX, favoriteBtnY, favoriteBtnX, favoriteBtnY, 0, 0) {
+        SetStatus("2 detected")
+        Sleep, 1000
+        return 2
+    } else {
+        SetStatus("1 detected")
+        Sleep, 1000
+        return 1
+    }
+    Sleep, 1000
+    ClickRelative(backpackBtnX, backpackBtnY, 2)
+
+    SetStatus("ERROR: Unable to detect favorite filter mode")
+    return 0
+}
+
+SetFavoriteMode(number) {
+    global backpackBtnX, backpackBtnY, favoriteBtnX, favoriteBtnY
+
+    if (number > 3) {
+        number := 3
+    }
+
+    ClickRelative(backpackBtnX, backpackBtnY, 2)
+
+    mode := CheckFavoriteMode()
+    if (mode) {
+        SetStatus("Mode is " . mode)
+        distance := number - mode
+        if (distance > 0) {
+            Loop, %distance% {
+                ClickRelative(favoriteBtnX, favoriteBtnY, 2)
+                Sleep, 100 
+            }
+        } else {
+            Loop, (3 - mode + (distance*-1)) {
+                ClickRelative(favoriteBtnX, favoriteBtnY, 2)
+                Sleep, 100
+            }
+        }
+    }
 }
 
 CheckRobloxStatusFunc() {
@@ -510,6 +593,7 @@ ReconnectToGame() {
                 SetStatus("Successfully joined game!")
                 ClickRelative(0.5, 0.5)
                 MapSide := ""
+                CheckForAdRewards()
                 break
             }
             Sleep, 1000
@@ -562,6 +646,32 @@ UINavigation(command, uialreadyopen := 0, closeUi := 1, delay := 100) {
     }
 }
 
+AddTask(task, position := 0) {
+    ; prevent duplicate tasks
+    for i, v in TASKS {
+        if (v == task) {
+            return
+        }
+    }
+    if (position) == 0 {
+        TASKS.Push(task)
+    } else {
+        TASKS.InsertAt(position, task)
+    }
+}
+
+GoToGarden(click := false) {
+    if (click) {
+        ClickRelative(966, 142, 1)
+    } else {
+        if (AdRewards) {
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRRE", 0, 1)
+        } else {
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE", 0, 1)
+        }
+    }
+}
+
 searchItem(search := "nil", crafting := 0) {
     global backpackBtnX
     global backpackBtnY
@@ -607,26 +717,64 @@ searchItem(search := "nil", crafting := 0) {
             sleep, 250
     }
 }
-PixelColorFound(color, x1, y1, x2, y2, variation := 0) {
+PixelColorFound(color, x1, y1, x2, y2, variation := 0, scale := 1) {
     ; Reference resolution
     refW := 1936
     refH := 1056
 
-    ; Get the current Roblox window position and size
-    global RobloxWindow
-    WinGetPos, winX, winY, winW, winH, ahk_id %RobloxWindow%
-    if (winW = "" || winH = "") {
-        return 0 ; something went wrong
+    ; Get Roblox window position & size
+    if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
+        WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+        if !RobloxWindow {
+            SetStatus("Roblox window not found!")
+            return
+        }
     }
 
+    ; Activate & restore window
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+    WinGet, winState, MinMax, ahk_id %RobloxWindow%
+    if (winState = -1) {
+        ; Window is minimized, restore it
+        WinRestore, ahk_id %RobloxWindow%
+    }
+
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+
     ; Scale coordinates to current window size
+    ; Get actual window geometry (was missing causing wrong coords)
+    WinGetPos, winX, winY, winW, winH, ahk_id %RobloxWindow%
+    if (ErrorLevel || winW = 0 || winH = 0) {
+        SetStatus("WinGetPos failed")
+        return
+    }
+
+    ; Use screen coordinates since we compute absolute positions
+    CoordMode, Pixel, Screen
+    CoordMode, Mouse, Screen
+
     scaleX := winW / refW
     scaleY := winH / refH
 
-    sx1 := winX + (x1 * scaleX)
-    sx2 := winX + (x2 * scaleX)
-    sy1 := winY + (y1 * scaleY)
-    sy2 := winY + (y2 * scaleY)
+    if (scale) {
+        sx1 := winX + (x1 * scaleX)
+        sx2 := winX + (x2 * scaleX)
+        sy1 := winY + (y1 * scaleY)
+        sy2 := winY + (y2 * scaleY)
+    } else {
+        sx1 := x1
+        sx2 := x2
+        sy1 := y1
+        sy2 := y2
+    }
+
+    ; Ensure integer coordinates
+    sx1 := Floor(sx1)
+    sy1 := Floor(sy1)
+    sx2 := Floor(sx2)
+    sy2 := Floor(sy2)
 
     ; Search for the pixel in the selected area
     PixelSearch, foundX, foundY, %sx1%, %sy1%, %sx2%, %sy2%, %color%, %variation%, Fast RGB
@@ -646,13 +794,25 @@ ImageDetect(imageName, x1, y1, x2, y2, variation = 0) {
     refH := 1056
 
     ; Get Roblox window position & size
-    WinGetPos, X, Y, W, H, Roblox
-    if (ErrorLevel) {
-        SetStatus("Roblox window not found!")
-        Sleep, 1500
-        Tooltip
-        return 0
+    if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
+        WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+        if !RobloxWindow {
+            SetStatus("Roblox window not found!")
+            return
+        }
     }
+
+    ; Activate & restore window
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+    WinGet, winState, MinMax, ahk_id %RobloxWindow%
+    if (winState = -1) {
+        ; Window is minimized, restore it
+        WinRestore, ahk_id %RobloxWindow%
+    }
+
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
 
     CoordMode, Pixel, Window
     CoordMode, Mouse, Window
@@ -667,7 +827,72 @@ ImageDetect(imageName, x1, y1, x2, y2, variation = 0) {
         y2s := Y + ((y2 / refH) * H)
 
         ; Search within Roblox window
-        ImageSearch, FoundX, FoundY, %x1s%, %y1s%, %x2s%, %y2s%, *%variation% %imagePath%
+        ImageSearch, FoundX, FoundY, %x1s%, %y1s%, %x2s%, %y2s%, *%variation% %imagePath%, 
+
+        if (ErrorLevel = 0) {
+            Sleep, 500
+            Tooltip
+            return 1
+        }
+        Sleep, 1000
+    }
+
+    Sleep, 1000
+    Tooltip
+    return 0
+}
+
+ImageDetectTransparent(imageName, x1, y1, x2, y2, variation = 0, absolute = 0) {
+    ; === Setup ===
+    baseDir := A_ScriptDir . "\Images\"
+    imagePath := baseDir . imageName
+
+    ; Reference resolution (your base)
+    refW := 1936
+    refH := 1056
+
+    ; Get Roblox window position & size
+    if !RobloxWindow || !WinExist("ahk_id " . RobloxWindow) {
+        WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+        if !RobloxWindow {
+            SetStatus("Roblox window not found!")
+            return
+        }
+    }
+
+    ; Activate & restore window
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+    WinGet, winState, MinMax, ahk_id %RobloxWindow%
+    if (winState = -1) {
+        ; Window is minimized, restore it
+        WinRestore, ahk_id %RobloxWindow%
+    }
+
+    WinActivate, ahk_id %RobloxWindow%
+    WinWaitActive, ahk_id %RobloxWindow%, , 2
+
+    CoordMode, Pixel, Window
+    CoordMode, Mouse, Window
+
+    ; === Try up to 4 times ===
+    Loop, 4 {
+
+        ; Scale coordinates relative to Roblox window
+        if (absolute) {
+            x1s := X + ((x1 / refW) * W)
+            y1s := Y + ((y1 / refH) * H)
+            x2s := X + ((x2 / refW) * W)
+            y2s := Y + ((y2 / refH) * H)
+        } else {
+            x1s := x1
+            y1s := y1
+            x2s := x2
+            y2s := y2
+        }
+
+        ; Search within Roblox window
+        ImageSearch, FoundX, FoundY, %x1s%, %y1s%, %x2s%, %y2s%, *%variation% *Trans0x000000 %imagePath%, 
 
         if (ErrorLevel = 0) {
             Sleep, 500
@@ -686,6 +911,59 @@ capitalizeFirst(text) {
     firstChar := SubStr(text, 1, 1)
     StringUpper, firstChar, firstChar, T
     return firstChar . SubStr(text, 2)
+}
+
+AddBoughtItem(item, qty) {
+    global BoughtList
+    if (qty <= 0)
+        return
+    if !IsObject(BoughtList)
+        BoughtList := {}
+
+    if (BoughtList.HasKey(item)) {
+        BoughtList[item] += qty
+    } else {
+        BoughtList[item] := qty
+    }
+
+    ; Also append to a running purchases log immediately for reliability
+    reportDir := A_ScriptDir "\Reports"
+    FileCreateDir, %reportDir%
+    timestamp := A_Now
+    FormatTime, humanTime, %timestamp%, yyyy-MM-dd HH:mm:ss
+    logLine := humanTime " - " item " x" qty "`r`n"
+    FileAppend, %logLine%, %reportDir% "\purchases_current.txt"
+}
+
+HourlyReport() {
+    global BoughtList
+    ; Determine previous hour label (report covers the last hour)
+    prev := A_Now
+    EnvAdd, prev, -1, hours
+    FormatTime, label, %prev%, yyyy-MM-dd_HH
+
+    reportDir := A_ScriptDir "\Reports"
+    FileCreateDir, %reportDir%
+    file := reportDir "\hourly_report_" label ".txt"
+
+    header := "Hourly report for " label "`r`n`r`n"
+    FileAppend, %header%, %file%
+
+    wrote := 0
+    if IsObject(BoughtList) {
+        for item, qty in BoughtList {
+            line := item " x" qty "`r`n"
+            FileAppend, %line%, %file%
+            wrote := 1
+        }
+    }
+
+    if (wrote = 0) {
+        FileAppend, % "No purchases recorded.`r`n", %file%
+    }
+
+    ; Clear the list after reporting
+    BoughtList := {}
 }
 
 
@@ -717,6 +995,19 @@ AnyItemsSelected(shopName) {
     }
 
     return anyItemsSelected
+}
+
+CheckForAdRewards() {
+    global AdRewards
+    ;ClickRelative(486, 141, 1)
+    if PixelColorFound(0x8A88F0, 430, 100, 550, 200, 10) {
+        SetStatus("Ad Rewards Button Detected")
+        AdRewards := true
+    } else {
+        SetStatus("Ad Rewards Button Not Detected")
+        AdRewards := false
+    }
+    Return AdRewards
 }
 
 BuyFromShop(shopName) {
@@ -796,10 +1087,23 @@ BuyFromShop(shopName) {
             } else {
                 UINavigation("E|||||DL", 1, 0)
             }
+            bought := -1
 
             Sleep, 100
             if PixelColorFound(0x1DB31D, 598, 313, 1311, 875, 0) {
-                UINavigation("EEEEEEEEEE", 1, 0)
+                Loop, 50 {
+                    if !(PixelColorFound(0x1DB31D, 598, 313, 1311, 875, 0)) {
+                        break
+                    }
+                    UINavigation("E|", 1, 0, 65)
+                    bought += 1
+                    Tooltip, Bought %item% %bought%x
+                }
+                ; If purchases occurred, record them to the BoughtList
+                if (bought >= 0) {
+                    qty := bought + 1
+                    AddBoughtItem(item, qty)
+                }
             }
         }
 
@@ -815,7 +1119,7 @@ BuyFromShop(shopName) {
         ClickRelative(1320, 248, 1)
     }
     Sleep, 1000
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUURRE")
+    GoToGarden()
 
     ; Confirm Roblox window still exists
     WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
@@ -971,6 +1275,11 @@ MainLoop:
             HarvestNow := false
         }
 
+        if (FuelCampfire && FuelNow) {
+            Gosub, FuelCampfireLabel
+            FuelNow := false
+        }
+
         if (TASKS.Length()) {
             WaitingForTasks := false
             NextTask := TASKS.RemoveAt(1)
@@ -1013,7 +1322,7 @@ MainGui:
     Gui, New, +Resize, Scripter Macro
 
     ; Title label at the top
-    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [BIZZY BEES Part 4]
+    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [CAMPFIRE]
 
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gShopsGui, Shops
@@ -1047,12 +1356,13 @@ CraftEventsGui:
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gSeedCraftingGui,  Seed Crafting
     Gui, Add, Button, w180 h40 gCraftingGui, Crafting
+    Gui, Add, Button, w180 h40 gCampfireGui, Campfire Event
     Gui, Add, Button, w180 h40 gEventsGui, Bizzy Bees Event
     Gui, Add, Button, w180 h40 gPassGui, Pass Shop
     Gui, Add, Button, w180 h40 gMainGui, Back
 
     ; Show GUI
-    Gui, Show, w200 h240, Scripter Macro
+    Gui, Show, w200 h280, Scripter Macro
 Return
 
 MerchantsGui:
@@ -1258,6 +1568,109 @@ SaveCrafting:
     Gosub, MainGui
 return
 
+CampfireGui:
+    Gui, Destroy
+    Gui, New, +Resize, Scripter Macro
+
+    ; build crafting order string
+    campfireOrderString := ""
+    for i, item in campfireCraftingOrder {
+        if (i != campfireCraftingOrder.Length()) {
+            campfireOrderString .= item . "|"
+        } else {
+            campfireOrderString .= item
+        }
+    }
+    
+
+    ; Buttons stacked vertically
+    Gui, Add, Text,, Fuel Campfire:
+
+    Gui, Add, Checkbox, vFuelCampfire gSaveFuelCampfire x80 y5
+    GuiControl,, FuelCampfire, %FuelCampfire%
+
+    ; Hidden text for FuelCampfire
+    Gui, Add, Text, x110 y5 Hidden vFuelEveryText1, every
+    Gui, Add, Edit, x140 y3 w50 h20 Hidden vFuelTimeEdit, %FuelTime%
+    Gui, Add, Text, x195 y5 Hidden vFuelEveryText2, minutes
+
+    Gosub, SaveFuelCampfire
+
+    Gui, Add, Text, x10 y25, Crafting Item 1:
+    Gui, Add, DropDownList, x90 y23 w135 vCampfireItem1 gSaveCampfireItems, %campfireOrderString%
+    GuiControl, ChooseString, CampfireItem1, %CampfireItem1%
+
+    Gui, Add, Text, x10 y50, Crafting Item 2:
+    Gui, Add, DropDownList, x90 y48 w135 vCampfireItem2 gSaveCampfireItems, %campfireOrderString%
+    GuiControl, ChooseString, CampfireItem2, %CampfireItem2%
+
+    Gui, Add, Text, x10 y75, Crafting Item 3:
+    Gui, Add, DropDownList, x90 y73 w135 vCampfireItem3 gSaveCampfireItems, %campfireOrderString%
+    GuiControl, ChooseString, CampfireItem3, %CampfireItem3%
+
+    if (CampfireItem1 = "None") {
+        GuiControl, Disable, CampfireItem2
+        GuiControl, Disable, CampfireItem3
+    } else {
+        GuiControl, Enable, CampfireItem2
+        if (CampfireItem2 = "None") {
+            GuiControl, Disable, CampfireItem3
+        } else {
+            GuiControl, Enable, CampfireItem3
+        }
+    }
+
+    Gui, Add, Button, x30 w180 h40 gCraftEventsGui, Back
+
+    ; Show GUI
+    Gui, Show, w240 h145, Scripter Macro
+Return
+
+SaveCampfireItems:
+    Gui, Submit, NoHide
+
+    ; Enforce dependency rules immediately after a change
+    if (CampfireItem1 = "None") {
+        CampfireItem2 := "None"
+        CampfireItem3 := "None"
+        GuiControl,, CampfireItem2, %CampfireItem2%
+        GuiControl,, CampfireItem3, %CampfireItem3%
+        GuiControl, Disable, CampfireItem2
+        GuiControl, Disable, CampfireItem3
+    } else {
+        GuiControl, Enable, CampfireItem2
+        if (CampfireItem2 = "None") {
+            CampfireItem3 := "None"
+            GuiControl,, CampfireItem3, %CampfireItem3%
+            GuiControl, Disable, CampfireItem3
+        } else {
+            GuiControl, Enable, CampfireItem3
+        }
+    }
+
+    ; Save to INI
+    IniWrite, %CampfireItem1%, %iniFile%, Campfire, CampfireItem1
+    IniWrite, %CampfireItem2%, %iniFile%, Campfire, CampfireItem2
+    IniWrite, %CampfireItem3%, %iniFile%, Campfire, CampfireItem3
+Return
+
+SaveFuelCampfire:
+    Gui, Submit, NoHide
+    IniWrite, %FuelCampfire%, config.ini, Campfire, FuelCampfire
+    if (FuelCampfire) {
+        GuiControl, Show, FuelEveryText1
+        GuiControl, Show, FuelTimeEdit
+        GuiControl, Show, FuelEveryText2
+    } else {
+        GuiControl, Hide, FuelEveryText1
+        GuiControl, Hide, FuelTimeEdit
+        GuiControl, Hide, FuelEveryText2
+    }
+Return
+
+CampfireCraftingGui:
+Return
+
 EventsGui:
     Gui, Destroy
     Gui, New, +Resize, Scripter Macro
@@ -1392,6 +1805,8 @@ SettingsGui:
     Gui, Tab, 3
     Gui, Add, Button, x20 y50 w100 h35 gSetBackpackPos, Set Backpack Button Position
 
+    Gui, Add, Button, x130 y50 w100 h35 gSetFavoritePos, Set Favorite Button Position
+
     ; === Reconnect Tab ===
     Gui, Tab, 4
     Gui, Add, Text, x20 y40 w150, VIP Server Link:
@@ -1475,8 +1890,50 @@ StartHotkeyLabel() {
             i++
     }
 
-    ; Start the auto-harvest timer
-    SetTimer, AutoHarvestTimer, % (AutoHarvest ? HarvestTime * 60000 : "Off")
+    ; Start the auto-harvest timer: align with last harvest time so interval is preserved
+    if (AutoHarvest) {
+        ; Read last harvest wall-clock time (A_Now format)
+        IniRead, lastHarvestStr, %iniFile%, Harvest, LastHarvest, 0
+        desired := HarvestTime * 60000
+        if (lastHarvestStr = "" || lastHarvestStr = "0") {
+            ; No previous harvest recorded: start fresh
+            SetTimer, AutoHarvestTimer, % desired
+        } else {
+            ; Compute target time = lastHarvest + HarvestTime minutes
+            target := lastHarvestStr
+            EnvAdd, target, %HarvestTime%, minutes
+
+            ; If target already passed, harvest now and schedule next full interval
+            if (A_Now >= target) {
+                HarvestNow := true
+                SetTimer, AutoHarvestTimer, % desired
+            } else {
+                ; Compute remaining seconds until target by stepping seconds (safe since interval is small)
+                cur := A_Now
+                secCount := 0
+                ; guard: don't loop more than desired/1000 + 10
+                maxSec := (desired // 1000) + 10
+                while (cur < target) {
+                    EnvAdd, cur, 1, seconds
+                    secCount += 1
+                    if (secCount > maxSec) {
+                        break
+                    }
+                }
+                remainingMs := secCount * 1000
+                if (remainingMs <= 0) {
+                    HarvestNow := true
+                    SetTimer, AutoHarvestTimer, % desired
+                } else {
+                    SetTimer, AutoHarvestTimer, % remainingMs
+                }
+            }
+        }
+    } else {
+        SetTimer, AutoHarvestTimer, Off
+    }
+
+    SetTimer, FuelCampfireTimer, % (FuelCampfire ? FuelTime * 60000 : "Off")
 
     ; Add tasks
     if WaitForRestocks {
@@ -1486,8 +1943,12 @@ StartHotkeyLabel() {
         Gosub, AddThirtyMinuteTasks
     }
 
+    CheckForAdRewards()
+
     ; Start running
     global NeedsAlignment := true
+    ; Initialize lastReportHour for hourly reports
+    FormatTime, lastReportHour,, H
     SetTimer, CheckForNewTasks, -1000
     Gosub, MainLoop
 }
@@ -1515,6 +1976,20 @@ SetBackpackPos:
     Gui, Show
 Return
 
+SetFavoritePos:
+    MsgBox, 64, Favorite Button Setup, Click where your favorite button is located.
+    Gui, Hide
+    ; Wait for left click
+    KeyWait, LButton, D
+    MouseGetPos, favoriteBtnX, favoriteBtnY
+    MsgBox, 64, Favorite Button Setup, Favorite button set at X %favoriteBtnX% Y %favoriteBtnY%
+
+    ; Save the location
+    IniWrite, %favoriteBtnX%, %iniFile%, Settings, favoriteBtnX
+    IniWrite, %favoriteBtnY%, %iniFile%, Settings, favoriteBtnY
+    Gui, Show
+Return
+
 ; Action Labels
 
 ClearTooltip:
@@ -1523,6 +1998,10 @@ Return
 
 AutoHarvestTimer:
     HarvestNow := true
+Return
+
+FuelCampfireTimer:
+    FuelNow := true
 Return
 
 SeedShopLabel:
@@ -1636,7 +2115,11 @@ AutoAlignCameraLabel:
         SetCameraMode(3)
 
         ; Teleport to shops
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
+        if (AdRewards) {
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURRERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
+        } else {
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRELLERRE")
+        }
         Sleep, 1000
         ; Chance camera back
         SetCameraMode(1)
@@ -1917,7 +2400,11 @@ Return
 MerchantLabel:
     SetStatus("Checking for Merchants")
     SetTimer, ClearTooltip, -2000
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUURE")
+    if (AdRewards) {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    } else {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUURE")
+    }
     Sleep, 1000
     Send, {s Down}
     Sleep, 1500
@@ -2094,15 +2581,13 @@ Return
 
 DetectMapSide:
     SetStatus("Detecting Map Side")
-    UINavigation("UUUUUUUUUUUUUUUUUUUUURRE")
+    GoToGarden()
+    WinActivate, Roblox
     Sleep, 1000
-    Send, {a down}
-    Sleep, 1500
-    Send, {a up}
-    Sleep, 1000
-    Send, {E}
+    Walk("a", 1500)
+    Send, {e}
     Sleep, 2000
-    if ImageDetect("SaveSlots.png", 629, 264, 1284, 833, 80) = 1 {
+    if PixelColorFound(0x279AE6, 640, 275, 1290, 860, 10) {
         SetStatus("Seeds Side Detected")
         MapSide := "Seeds"
         ClickRelative(1255, 227, 1)
@@ -2137,7 +2622,11 @@ AutoHarvestLabel:
     if (MapSide = "Sell") {
         SetCameraMode(3)
         Sleep, 1000
-        UINavigation("UUUUUUUUUUUUUUUUUUUUUURRERRELLERRELLERRELLERRELLE")
+        if (AdRewards) {
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUURRERRELLERRELLERRELLERRELLE")
+        } else {
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUURERRELLERRELLERRELLERRELLE")
+        }
         Sleep, 1000
         SetCameraMode(1)
         if HoneyGardenActive {
@@ -2146,7 +2635,7 @@ AutoHarvestLabel:
     }
 
     ; Camera should be good now
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLURRRRE")
+    GoToGarden(1)
     Sleep, 1000
 
     ; Collect plants
@@ -2196,7 +2685,7 @@ AutoHarvestLabel:
         Harvest()
     }
 
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    GoToGarden()
     Sleep, 1000
 
     ; right side
@@ -2240,7 +2729,7 @@ AutoHarvestLabel:
         Harvest()
     }
 
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUURRE")
+    GoToGarden()
     Sleep, 1000
 
     ; middle
@@ -2263,12 +2752,18 @@ AutoHarvestLabel:
     global NeedsAlignment := true
 
     ; Restart auto harvest timer
+    ; Record last harvest time (wall-clock in A_Now format)
+    IniWrite, %A_Now%, %iniFile%, Harvest, LastHarvest
     HarvestNow := False
     SetTimer, AutoHarvestTimer, % (AutoHarvest ? HarvestTime * 60000 : "Off")
 Return
 
 AutoSellPlantsLabel:
-    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+    if (AdRewards) {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRRE")
+    } else {
+        UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUURRRE")
+    }
     Sleep, 2500
     Send, {E}
     Sleep, 3000
@@ -2466,6 +2961,15 @@ CheckForNewTasks:
     FormatTime, curMin,, m
     FormatTime, curSec,, s
 
+    ; Detect hour change for hourly reports
+    FormatTime, curHour,, H
+    if (lastReportHour = "") {
+        lastReportHour := curHour
+    } else if (curHour != lastReportHour) {
+        HourlyReport()
+        lastReportHour := curHour
+    }
+
     curMin := curMin + 0
     curSec := curSec + 0
 
@@ -2490,7 +2994,7 @@ Return
 AddOneMinuteTasks:
     ; Check if auto compress is on
     if (AutoCompress) {
-        TASKS.InsertAt(1, "CompressLabel")
+        AddTask("CompressLabel", 1)
     }
 Return
 
@@ -2505,7 +3009,7 @@ AddFiveMinuteTasks:
         }
     }
     if (anySeedsSelected) {
-        TASKS.Push("SeedShopLabel")
+        AddTask("SeedShopLabel")
     }
 
     ; Check if any honey seeds are selected
@@ -2518,7 +3022,7 @@ AddFiveMinuteTasks:
         }
     }
     if (anyHoneySeedsSelected) {
-        TASKS.Push("HoneySeedShopLabel")
+        AddTask("HoneySeedShopLabel")
     }
 
     ; Check if any gears are selected (by reading config.ini where SaveGears writes them)
@@ -2531,7 +3035,7 @@ AddFiveMinuteTasks:
         }
     }
     if (anyGearsSelected) {
-        TASKS.Push("GearShopLabel")
+        AddTask("GearShopLabel")
     }
 
     ; Check if any bee eggs are selected
@@ -2544,17 +3048,17 @@ AddFiveMinuteTasks:
         }
     }
     if (anyBeeEggsSelected) {
-        TASKS.Push("BeeEggsShopLabel")
+        AddTask("BeeEggsShopLabel")
     }
     ; Check if any season pass items are selected
     if (AnyItemsSelected("Pass") = 1) {
-        TASKS.Push("PassShopLabel")
+        AddTask("PassShopLabel")
     }
     
 Return
 
 AddFifteenMinuteTasks:
-    TASKS.Push("DoCrafting")
+    AddTask("DoCrafting")
 Return
 
 AddThirtyMinuteTasks:
@@ -2568,7 +3072,7 @@ AddThirtyMinuteTasks:
         }
     }
     if (anyHoneyCoinsSelected) {
-        TASKS.Push("HoneyCoinsLabel")
+        AddTask("HoneyCoinsLabel")
     }
 
     ; Check if any royal jellyu items are selected
@@ -2581,7 +3085,7 @@ AddThirtyMinuteTasks:
         }
     }
     if (anyRoyalJellySelected) {
-        TASKS.Push("RoyalJellyLabel")
+        AddTask("RoyalJellyLabel")
     }
 
     
@@ -2596,17 +3100,17 @@ AddThirtyMinuteTasks:
         }
     }
     if (anyEggsSelected) {
-        TASKS.Push("EggShopLabel")
+        AddTask("EggShopLabel")
     }
 
     ; Check if any merchant items are selected
     if (AnyItemsSelected("Sky") = 1 || AnyItemsSelected("Gnomes") = 1 || AnyItemsSelected("Honey") = 1 || AnyItemsSelected("Summer") = 1 || AnyItemsSelected("Sprinklers") = 1 || AnyItemsSelected("Fall") = 1) {
-        TASKS.Push("MerchantLabel")
+        AddTask("MerchantLabel")
     }
 
     ; Check if auto sell plants is on
     if (AutoSellPlants) {
-        TASKS.Push("AutoSellPlantsLabel")
+        AddTask("AutoSellPlantsLabel")
     }
 Return
 
@@ -2654,6 +3158,218 @@ DoCrafting:
     }
 Return
 
+CheckForCampfireLevel:
+    global CampfireLevel
+
+    SetTimer, CheckForCampfireLevel, -3000
+Return
+
 F6::
 RotateCamera(60)
+Return
+
+F7::
+    ; Dump current BoughtList to a timestamped file for debugging
+    global BoughtList
+    reportDir := A_ScriptDir "\Reports"
+    FileCreateDir, %reportDir%
+    timestamp := A_Now
+    FormatTime, fileTime, %timestamp%, yyyy-MM-dd_HH-mm-ss
+    dumpFile := reportDir "\purchases_dump_" fileTime ".txt"
+
+    FileAppend, % "Dump at " fileTime "`r`n`r`n", %dumpFile%
+    if IsObject(BoughtList) {
+        for item, qty in BoughtList {
+            FileAppend, % item " x" qty "`r`n", %dumpFile%
+        }
+    } else {
+        FileAppend, No BoughtList object found.`r`n, %dumpFile%
+    }
+
+    Tooltip, BoughtList dumped to %dumpFile%
+    SetTimer, ClearTooltip, -2500
+Return
+
+FuelCampfireLabel:
+    global backpackBtnX, backpackBtnY
+    
+    SetStatus("Fueling Campfire")
+
+    ; Walk to campfire
+    if (UseEventLanterns) {
+       Send, {EventLanternSlot}
+       ClickRelative(0.5, 0.5) 
+    } else {
+        ClickRelative(1280, 140, 1)
+        ClickRelative(0.5, 0.5)
+        Sleep, 1000
+        Send, {d}
+        Walk("d", 6750)
+        Walk("s", 500)
+    }
+    Sleep, 500
+    ClickRelative(0.5, 0.5)
+    SetFavoriteMode(3)
+    Sleep, 1000
+    ClickRelative(607, 780, 1)
+    Sleep, 1000
+    Loop, 200 {
+        if PixelColorFound(0x313131, 640, 690, 710, 760, 3) {
+            ClickRelative(672, 718, 1)
+            Sleep, 100
+            Send, {e}
+            Sleep, 250
+        } else {
+            break
+        }
+    }
+    SetStatus("Campfire Fueled")
+
+    Gosub, CampfireCraftingLabel
+Return
+
+CampfireCraftingLabel:
+    global CampfireItem1, CampfireItem2, CampfireItem3
+
+    if (CampfireItem1 != "None") && (CampfireItem1 != "") {
+        SetStatus("Crafting Campfire Items")
+
+        ; Walk to crafting
+        if (UseEventLanterns) {
+            Send, {EventLanternSlot}
+            ClickRelative(0.5, 0.5)
+            Sleep, 500
+            Send, {d}
+            Walk("d", 1000)
+            Walk("s", 1000)
+        } else {
+            ;ClickRelative(1280, 140, 1)
+            ;ClickRelative(0.5, 0.5)
+            ;Sleep, 1000
+            ;Send, {d}
+            ;Walk("d", 7750)
+            ;Walk("s", 500)
+        }
+        Sleep, 500
+        ClickRelative(0.5, 0.5)
+
+        Sleep, 1000
+        Send, {e}
+        Sleep, 2000
+        if PixelColorFound(0xCB5D31, 460, 210, 1470, 330, 10) {
+            SetStatus("Campfire Workshop Opened")
+            UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 1, 30)
+            ClickRelative(735, 554, 1)
+            Sleep, 500
+            UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
+            SetStatus("Claiming Old Items")
+            UINavigation("DDRE", 1, 0)
+            Sleep, 1000
+            CloseRobuxPrompt()
+            UINavigation("RE", 1, 0)
+            Sleep, 1000
+            CloseRobuxPrompt()
+            UINavigation("RE", 1)
+            Sleep, 1000
+            CloseRobuxPrompt()
+            Sleep, 1000
+            if (CampfireItem2 = "None") || (CampfireItem2 = "") {
+                ; Craft 3 of item 1
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem1) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||E|||E|||", 1)
+            } else if (CampfireItem3 = "None") || (CampfireItem3 = "") {
+                ; Craft 2 of item 1
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem1) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||E|||", 1, 0)
+                ; Craft 1 of item 2
+                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem2) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1)
+            } else if (CampfireItem3 != "None") && (CampfireItem3 != "") {
+                ; Craft 1 of item 1
+                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem1) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1, 0)
+                ; Craft 1 of item 2
+                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem2) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1, 0)
+                ; Craft 1 of item 3
+                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem3) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1)
+            }
+        }
+        Sleep, 1000
+        ClickRelative(1413, 279, 1)
+        Sleep, 1000
+    }
 Return

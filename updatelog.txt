@@ -1,7 +1,10 @@
-Version BizzyBees4v1.1
+Version Campfire1.0
 
 Additions:
- - Option to Wait For Restocks in Settings
+ - Added Firefly Spiral
+ - Added Auto Fuel Campfire
+ - Added Campfire Crafting
+ - Added Hourly Reports
 
 Bug Fixes:
- - Fixed bugs with auto align due to Roblox inconsistency
+ - Macro will now detect if the ad rewards button is there or not
