@@ -11,3 +11,7 @@ Bug Fixes:
 
 V1.01 Changes:
  - Fixed a bug with Campfire Crafting
+
+V1.02 Changes:
+ - Fixed Campfire Crafting (again)
+ - Fixed Campfire Fuel Timer not restarting

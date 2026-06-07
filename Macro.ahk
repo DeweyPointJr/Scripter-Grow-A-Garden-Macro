@@ -1087,7 +1087,7 @@ BuyFromShop(shopName) {
             } else {
                 UINavigation("E|||||DL", 1, 0)
             }
-            bought := -1
+            bought := 0
 
             Sleep, 100
             if PixelColorFound(0x1DB31D, 598, 313, 1311, 875, 0) {
@@ -1154,7 +1154,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.01"
+    currentVersion := "Campfire1.02"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -3225,6 +3225,7 @@ FuelCampfireLabel:
     }
     SetStatus("Campfire Fueled")
 
+    SetTimer, FuelCampfireTimer, % (FuelCampfire ? FuelTime * 60000 : "Off")
     Gosub, CampfireCraftingLabel
 Return
 
@@ -3276,7 +3277,10 @@ CampfireCraftingLabel:
             if (CampfireItem2 = "None") || (CampfireItem2 = "") {
                 ; Craft 3 of item 1
                 Loop, 3 {
-                    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                    UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 0, 30)
+                    ClickRelative(735, 554, 1)
+                    Sleep, 500
+                    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
                     index := 0
                     for i, listItem in campfireCraftingOrder {
                         if (listItem = CampfireItem1) {
@@ -3294,7 +3298,10 @@ CampfireCraftingLabel:
             } else if (CampfireItem3 = "None") || (CampfireItem3 = "") {
                 ; Craft 2 of item 1
                 Loop, 2 {
-                    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                    UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 0, 30)
+                    ClickRelative(735, 554, 1)
+                    Sleep, 500
+                    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
                     index := 0
                     for i, listItem in campfireCraftingOrder {
                         if (listItem = CampfireItem1) {
@@ -3310,7 +3317,10 @@ CampfireCraftingLabel:
                     UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE", 1)
                 }
                 ; Craft 1 of item 2
-                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 0, 30)
+                ClickRelative(735, 554, 1)
+                Sleep, 500
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem2) {
@@ -3326,7 +3336,10 @@ CampfireCraftingLabel:
                 UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE", 1)
             } else if (CampfireItem3 != "None") && (CampfireItem3 != "") {
                 ; Craft 1 of item 1
-                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 0, 30)
+                ClickRelative(735, 554, 1)
+                Sleep, 500
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem1) {
@@ -3341,7 +3354,10 @@ CampfireCraftingLabel:
                 }
                 UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1)
                 ; Craft 1 of item 2
-                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 0, 30)
+                ClickRelative(735, 554, 1)
+                Sleep, 500
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem2) {
@@ -3356,7 +3372,10 @@ CampfireCraftingLabel:
                 }
                 UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1)
                 ; Craft 1 of item 3
-                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                UINavigation("U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|U|L|LLLLLLLLRUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 0, 0, 30)
+                ClickRelative(735, 554, 1)
+                Sleep, 500
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLLLLLRUUE|||E", 0, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem3) {
