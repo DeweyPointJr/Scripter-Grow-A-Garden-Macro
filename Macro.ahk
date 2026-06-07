@@ -77,7 +77,7 @@ IniRead, HarvestTime, %iniFile%, Settings, HarvestTime, 30
 IniRead, AutoSellPlants, %iniFile%, Settings, AutoSellPlants, 0
 
 IniRead, AutoCompress, %iniFile%, Settings, AutoCompress, 0
-IniRead, HoneyGardenActive, %iniFile%, Settings, HoneyGardenActive, 1
+IniRead, HoneyGardenActive, %iniFile%, Settings, HoneyGardenActive, 0
 IniRead, UsePollenRadars, %iniFile%, Settings, UsePollenRadars, 0
 IniRead, PollenRadarSlot, %iniFile%, Settings, PollenRadarSlot, 1
 
@@ -1154,7 +1154,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.0" ; <-- Set your current version here
+    currentVersion := "Campfire1.01"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -3243,12 +3243,12 @@ CampfireCraftingLabel:
             Walk("d", 1000)
             Walk("s", 1000)
         } else {
-            ;ClickRelative(1280, 140, 1)
-            ;ClickRelative(0.5, 0.5)
-            ;Sleep, 1000
-            ;Send, {d}
-            ;Walk("d", 7750)
-            ;Walk("s", 500)
+            ClickRelative(1280, 140, 1)
+            ClickRelative(0.5, 0.5)
+            Sleep, 1000
+            Send, {d}
+            Walk("d", 7750)
+            Walk("s", 500)
         }
         Sleep, 500
         ClickRelative(0.5, 0.5)
@@ -3275,23 +3275,58 @@ CampfireCraftingLabel:
             Sleep, 1000
             if (CampfireItem2 = "None") || (CampfireItem2 = "") {
                 ; Craft 3 of item 1
-                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
-                index := 0
-                for i, listItem in campfireCraftingOrder {
-                    if (listItem = CampfireItem1) {
-                        SetStatus("Crafting " . listItem)
-                        index := i-2
-                        break
+                Loop, 3 {
+                    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                    index := 0
+                    for i, listItem in campfireCraftingOrder {
+                        if (listItem = CampfireItem1) {
+                            SetStatus("Crafting " . listItem)
+                            index := i-2
+                            break
+                        }
                     }
+                    Loop, %index% {
+                        Send, {Down}
+                        Sleep, 30
+                    }
+                    UINavigation("E||LUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE", 1)
                 }
-                Loop, %index% {
-                    Send, {Down}
-                    Sleep, 30
-                }
-                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||E|||E|||", 1)
             } else if (CampfireItem3 = "None") || (CampfireItem3 = "") {
                 ; Craft 2 of item 1
-                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                Loop, 2 {
+                    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
+                    index := 0
+                    for i, listItem in campfireCraftingOrder {
+                        if (listItem = CampfireItem1) {
+                            SetStatus("Crafting " . listItem)
+                            index := i-2
+                            break
+                        }
+                    }
+                    Loop, %index% {
+                        Send, {Down}
+                        Sleep, 30
+                    }
+                    UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE", 1)
+                }
+                ; Craft 1 of item 2
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                index := 0
+                for i, listItem in campfireCraftingOrder {
+                    if (listItem = CampfireItem2) {
+                        SetStatus("Crafting " . listItem)
+                        index := i-2
+                        break
+                    }
+                }
+                Loop, %index% {
+                    Send, {Down}
+                    Sleep, 30
+                }
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE", 1)
+            } else if (CampfireItem3 != "None") && (CampfireItem3 != "") {
+                ; Craft 1 of item 1
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem1) {
@@ -3304,9 +3339,9 @@ CampfireCraftingLabel:
                     Send, {Down}
                     Sleep, 30
                 }
-                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||E|||", 1, 0)
+                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1)
                 ; Craft 1 of item 2
-                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem2) {
@@ -3320,39 +3355,8 @@ CampfireCraftingLabel:
                     Sleep, 30
                 }
                 UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1)
-            } else if (CampfireItem3 != "None") && (CampfireItem3 != "") {
-                ; Craft 1 of item 1
-                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 0, 0)
-                index := 0
-                for i, listItem in campfireCraftingOrder {
-                    if (listItem = CampfireItem1) {
-                        SetStatus("Crafting " . listItem)
-                        index := i-2
-                        break
-                    }
-                }
-                Loop, %index% {
-                    Send, {Down}
-                    Sleep, 30
-                }
-                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1, 0)
-                ; Craft 1 of item 2
-                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
-                index := 0
-                for i, listItem in campfireCraftingOrder {
-                    if (listItem = CampfireItem2) {
-                        SetStatus("Crafting " . listItem)
-                        index := i-2
-                        break
-                    }
-                }
-                Loop, %index% {
-                    Send, {Down}
-                    Sleep, 30
-                }
-                UINavigation("E||LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLRRE|||", 1, 0)
                 ; Craft 1 of item 3
-                UINavigation("LUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
+                UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUULLLLLLLLLLLLLLLLLLLRUU", 1, 0)
                 index := 0
                 for i, listItem in campfireCraftingOrder {
                     if (listItem = CampfireItem3) {

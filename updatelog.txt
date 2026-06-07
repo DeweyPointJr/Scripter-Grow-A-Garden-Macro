@@ -1,4 +1,4 @@
-Version Campfire1.0
+Version Campfire1.01
 
 Additions:
  - Added Firefly Spiral
@@ -8,3 +8,6 @@ Additions:
 
 Bug Fixes:
  - Macro will now detect if the ad rewards button is there or not
+
+V1.01 Changes:
+ - Fixed a bug with Campfire Crafting
