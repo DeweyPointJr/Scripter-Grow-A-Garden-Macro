@@ -4,11 +4,9 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; GLOBAL VARIABLES
+global CameraSettingAtBottom := false
 
 global TASKS := []
-global OneMinuteTasks := [AutoCompressorLabel]
-global FiveMinuteTasks := [SeedShopLabel, HoneySeedShopLabel, GearShopLabel, BeeEggsShopLabel]
-global ThirtyMinuteTasks := [HoneyCoinsLabel, RoyalJellyLabel, EggShopLabel, AutoSellPlants]
 
 global ERRORS := 0
 lastErrors := 0
@@ -363,7 +361,7 @@ RotateCamera(degrees)
 }
 
 CheckCameraMode() {
-    global RobloxWindow
+    global RobloxWindow, CameraSettingAtBottom
     WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
 
     Send, {Esc}
@@ -382,6 +380,24 @@ CheckCameraMode() {
     CoordMode, Pixel, Window
     CoordMode, Mouse, Window
 
+    if (CameraSettingAtBottom) {
+        MouseMoveRelative(0.5, 0.5)
+        Loop, 50 {
+            Send, {WheelDown}
+            Sleep, 30
+        }
+        MouseMoveRelative(737, 406, 1)
+        Sleep, 500
+        Loop, 4 {
+            imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
+            ImageSearch, FoundX, FoundY, (((X+580)/1936)*W), (((Y+375)/1056)*H), (((X+1420)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
+            if (ErrorLevel = 0) {
+                global CameraSettingAtBottom := True
+                return A_Index
+            }
+        }
+    }
+
     Loop, 4 {
         imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
         ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
@@ -390,7 +406,21 @@ CheckCameraMode() {
         }
     }
 
-    
+    MouseMoveRelative(0.5, 0.5)
+    Loop, 50 {
+        Send, {WheelDown}
+        Sleep, 30
+    }
+    MouseMoveRelative(737, 406, 1)
+    Sleep, 500
+    Loop, 4 {
+        imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
+        ImageSearch, FoundX, FoundY, (((X+580)/1936)*W), (((Y+375)/1056)*H), (((X+1420)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
+        if (ErrorLevel = 0) {
+            global CameraSettingAtBottom := True
+            return A_Index
+        }
+    }
 
     Loop, 4 {
         Send, {Right}
@@ -417,7 +447,11 @@ SetCameraMode(number) {
         distance := mode - number
         if (distance > 0) {
             Loop, %distance% {
-                ClickRelative(904, 324, 1)
+                if (CameraSettingAtBottom) {
+                    ClickRelative(907, 409, 1)
+                } else {
+                    ClickRelative(904, 324, 1)
+                }
                 Sleep, 100
             }
         } else if (distance < 0) {
@@ -542,9 +576,9 @@ ReconnectToGame() {
     
     ; Close all Roblox processes
     try {
-        WinClose, Roblox
+        WinClose, ahk_exe RobloxPlayerBeta.exe
         Sleep, 1000
-        WinClose, Roblox
+        WinClose, ahk_exe RobloxPlayerBeta.exe
         SetStatus("Roblox closed. Waiting...")
         Sleep, 2000
         
@@ -577,7 +611,7 @@ ReconnectToGame() {
         Loop 30 {
             global RobloxWindow
             if (WinExist("Roblox")) {
-                WinMaximize, Roblox
+                WinMaximize, ahk_exe RobloxPlayerBeta.exe
                 SetStatus("Roblox opened successfully. Loading game...")
                 WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
                 Sleep, 25000  ; Wait for game to load
@@ -1001,10 +1035,14 @@ CheckForAdRewards() {
     global AdRewards
     ;ClickRelative(486, 141, 1)
     if PixelColorFound(0x8A88F0, 430, 100, 550, 200, 10) {
-        SetStatus("Ad Rewards Button Detected")
+        if !(AdRewards) {
+            SetStatus("Ad Rewards Button Detected")
+        }
         AdRewards := true
     } else {
-        SetStatus("Ad Rewards Button Not Detected")
+        if (AdRewards) {
+            SetStatus("Ad Rewards Button Not Detected")
+        }
         AdRewards := false
     }
     Return AdRewards
@@ -1154,7 +1192,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.03"
+    currentVersion := "Campfire1.04"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1253,6 +1291,8 @@ MainLoop:
         if (AutoReconnect) {
             CheckRobloxStatusFunc()
         }
+
+        CheckForAdRewards()
 
         ; Make sure camera is aligned correctly
         if (lastErrors != ERRORS) {
@@ -2582,7 +2622,13 @@ Return
 DetectMapSide:
     SetStatus("Detecting Map Side")
     GoToGarden()
-    WinActivate, Roblox
+    global RobloxWindow
+    WinGet, RobloxWindow, ID, ahk_exe RobloxPlayerBeta.exe
+    if !RobloxWindow {
+        MsgBox, Roblox window not found!
+        return
+    }
+    WinActivate, ahk_id %RobloxWindow%
     Sleep, 1000
     Walk("a", 1500)
     Send, {e}
