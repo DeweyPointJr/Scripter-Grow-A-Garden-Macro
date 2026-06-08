@@ -1,5 +1,6 @@
 ﻿#NoEnv
-SetWorkingDir %A_ScriptDir%
+SplitPath, A_ScriptDir, , parentDir
+SetWorkingDir %parentDir%
 Sleep, 1000
 
 ; Find extracted folder
@@ -20,26 +21,26 @@ if (extractedDir != "") {
     Loop, Files, %extractedDir%\*.*, F
     {
         if (A_LoopFileName != "update.ahk" && A_LoopFileName != "config.ini") {
-            FileMove, %A_LoopFileFullPath%, %A_ScriptDir%\%A_LoopFileName%, 1
+            FileMove, %A_LoopFileFullPath%, %parentDir%\%A_LoopFileName%, 1
         }
     }
 
     ; Move all folders up one level
     Loop, Files, %extractedDir%\*.*, D
     {
-        FileMoveDir, %A_LoopFileFullPath%, %A_ScriptDir%\%A_LoopFileName%, 1
+        FileMoveDir, %A_LoopFileFullPath%, %parentDir%\%A_LoopFileName%, 1
     }
 
     ; If there's a new update.ahk, move it to a staging folder
     if FileExist(extractedDir "\update.ahk") {
-        FileCreateDir, %A_ScriptDir%\update_files
-        FileMove, %extractedDir%\update.ahk, %A_ScriptDir%\update_files\update.ahk, 1
+        FileCreateDir, %parentDir%\update_files
+        FileMove, %extractedDir%\update.ahk, %parentDir%\update_files\update.ahk, 1
     }
 
     ; Show update log if available
     logFile := extractedDir "\updatelog.txt"
     if !FileExist(logFile)
-        logFile := A_ScriptDir "\updatelog.txt"
+        logFile := parentDir "\updatelog.txt"
 
     if FileExist(logFile) {
         FileRead, updateLog, %logFile%
@@ -51,8 +52,8 @@ if (extractedDir != "") {
 }
 
 ; Cleanup
-FileDelete, %A_ScriptDir%\update.zip
+FileDelete, %parentDir%\update.zip
 
 ; Relaunch main macro
-Run, %A_ScriptDir%\Macro.ahk
+Run, %parentDir%\Macro.ahk
 ExitApp
