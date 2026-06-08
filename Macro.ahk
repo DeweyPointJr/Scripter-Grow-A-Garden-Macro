@@ -1192,7 +1192,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.04"
+    currentVersion := "Campfire1.041"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1248,7 +1248,7 @@ CheckForUpdate() {
             RunWait, %ComSpec% /c powershell -Command "Expand-Archive -Force '%A_ScriptDir%\update.zip' '%A_ScriptDir%'",, Hide
 
             ; Run updater (it will handle the log and file moves)
-            Run, %A_ScriptDir%"\Submacros\update.ahk"
+            Run, %A_ScriptDir%\Submacros\update.ahk
             ExitApp
         }
     } else {
@@ -1261,7 +1261,7 @@ CheckForUpdate() {
 CheckForUpdatedUpdater() {
     updateCandidate := A_ScriptDir "\update_files\update.ahk"
     if FileExist(updateCandidate) {
-        FileMove, %updateCandidate%, %A_ScriptDir%"\Submacros\update.ahk", 1
+        FileMove, %updateCandidate%, %A_ScriptDir%\Submacros\update.ahk, 1
         FileRemoveDir, %A_ScriptDir%\update_files, 1
     }
 }
