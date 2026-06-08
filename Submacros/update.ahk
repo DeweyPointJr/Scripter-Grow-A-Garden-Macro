@@ -1,12 +1,12 @@
-﻿#NoEnv
+#NoEnv
 SplitPath, A_ScriptDir, , parentDir
 SetWorkingDir %parentDir%
 Sleep, 1000
 
-; Find extracted folder
+; Find extracted folder under the parent project directory
 newestTime := 0
 extractedDir := ""
-Loop, Files, %A_ScriptDir%\*.*, D
+Loop, Files, %parentDir%\*.*, D
 {
     if InStr(A_LoopFileName, "Scripter-Grow-A-Garden-Macro") {
         if (A_LoopFileTimeCreated > newestTime) {
@@ -32,9 +32,15 @@ if (extractedDir != "") {
     }
 
     ; If there's a new update.ahk, move it to a staging folder
-    if FileExist(extractedDir "\update.ahk") {
+    updateSource := ""
+    if FileExist(extractedDir "\update.ahk")
+        updateSource := extractedDir "\update.ahk"
+    else if FileExist(extractedDir "\Submacros\update.ahk")
+        updateSource := extractedDir "\Submacros\update.ahk"
+
+    if (updateSource != "") {
         FileCreateDir, %parentDir%\update_files
-        FileMove, %extractedDir%\update.ahk, %parentDir%\update_files\update.ahk, 1
+        FileMove, %updateSource%, %parentDir%\update_files\update.ahk, 1
     }
 
     ; Show update log if available
