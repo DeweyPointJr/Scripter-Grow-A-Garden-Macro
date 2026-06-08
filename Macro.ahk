@@ -1192,7 +1192,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.042"
+    currentVersion := "Campfire1.043"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
