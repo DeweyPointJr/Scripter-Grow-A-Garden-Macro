@@ -4,8 +4,6 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; GLOBAL VARIABLES
-global CameraModePos
-IniRead, CameraModePos, %iniFile%, Settings, CameraModePos, 2
 
 global TASKS := []
 
@@ -87,6 +85,8 @@ IniRead, CampfireItem2, %iniFile%, Campfire, CampfireItem2, "None"
 IniRead, CampfireItem3, %iniFile%, Campfire, CampfireItem3, "None"
 
 IniRead, WaitForRestocks, %iniFile%, Settings, WaitForRestocks, 1
+
+IniRead, CameraModePos, %iniFile%, Settings, CameraModePos, 2
 
 ; === Bind Hotkeys Dynamically ===
 Hotkey, %StartHotkey%, StartHotkeyLabel
@@ -1172,7 +1172,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.05"
+    currentVersion := "Campfire1.051"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1754,7 +1754,6 @@ SavePollenRadarSlot:
 Return
 
 SettingsGui:
-    global CameraModePos
 
     Gui, Destroy
     Gui, New, +Resize, Settings
@@ -1802,8 +1801,8 @@ SettingsGui:
     ; === Roblox Tab ===
     Gui, Tab, 2
     Gui, Add, Text, x20 y50, Camera Mode Position:
-    Gui, Add, Edit, vCameraModePosEdit Number x150 y48 w100
-    GuiControl,, CameraModePosEdit, %CameraModePos%
+    Gui, Add, Edit, vCameraModePos Number x150 y48 w100
+    GuiControl,, CameraModePos, %CameraModePos%
 
 
     ; === Hotkeys Tab ===
