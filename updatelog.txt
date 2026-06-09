@@ -1,4 +1,4 @@
-Version Campfire1.04
+Version Campfire1.05
 
 Additions:
  - Added Firefly Spiral
@@ -18,3 +18,6 @@ V1.02 Changes:
 
 V1.04 Changes:
  - Fixed bugs with camera detection some people were having
+
+V1.05 Changes:
+ - Added option in settings for camera mode position

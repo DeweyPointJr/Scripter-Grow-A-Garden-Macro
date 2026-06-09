@@ -4,7 +4,8 @@ SendMode Input  ; Recommended for new scripts due to its superior speed and reli
 SetWorkingDir %A_ScriptDir%  ; Ensures a consistent starting directory.
 
 ; GLOBAL VARIABLES
-global CameraSettingAtBottom := false
+global CameraModePos
+IniRead, CameraModePos, %iniFile%, Settings, CameraModePos, 2
 
 global TASKS := []
 
@@ -361,7 +362,7 @@ RotateCamera(degrees)
 }
 
 CheckCameraMode() {
-    global RobloxWindow, CameraSettingAtBottom
+    global RobloxWindow, CameraModePos
     WinGetPos, X, Y, W, H, ahk_id %RobloxWindow%
 
     Send, {Esc}
@@ -372,32 +373,28 @@ CheckCameraMode() {
         ClickRelative(817, 205, 1)
         Sleep, 250
     }
-    MouseMoveRelative(792, 275, 1)
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 1, 0)
     Sleep, 500
-    Send, {Down}
-
-    baseDir = A_ScriptDir . Images
-    CoordMode, Pixel, Window
-    CoordMode, Mouse, Window
-
-    if (CameraSettingAtBottom) {
-        MouseMoveRelative(0.5, 0.5)
-        Loop, 50 {
-            Send, {WheelDown}
+    if (CameraModePos = -1) {
+        SetStatus("Detecting Camera Mode Position")
+        i := -1
+        Loop, 40 {
+            i += 1
+            if ImageDetect("CameraMode.png", 540, 210, 1400, 910, 120) {
+                SetStatus("Camera Mode Detected at Setting #" . (%i% + 1))
+                CameraModePos := i
+                break
+            }
+            Send, {Down}
             Sleep, 30
         }
-        MouseMoveRelative(737, 406, 1)
-        Sleep, 500
-        Loop, 4 {
-            imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
-            ImageSearch, FoundX, FoundY, (((X+580)/1936)*W), (((Y+375)/1056)*H), (((X+1420)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
-            if (ErrorLevel = 0) {
-                global CameraSettingAtBottom := True
-                return A_Index
-            }
-        }
     }
-
+    UINavigation("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", 1, 0)
+    downTimes := (CameraModePos - 1)
+    Loop, %downTimes% {
+        Send, {Down}
+        Sleep, 30
+    }
     Loop, 4 {
         imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
         ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
@@ -406,26 +403,11 @@ CheckCameraMode() {
         }
     }
 
-    MouseMoveRelative(0.5, 0.5)
-    Loop, 50 {
-        Send, {WheelDown}
-        Sleep, 30
-    }
-    MouseMoveRelative(737, 406, 1)
-    Sleep, 500
-    Loop, 4 {
-        imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
-        ImageSearch, FoundX, FoundY, (((X+580)/1936)*W), (((Y+375)/1056)*H), (((X+1420)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
-        if (ErrorLevel = 0) {
-            global CameraSettingAtBottom := True
-            return A_Index
-        }
-    }
-
     Loop, 4 {
         Send, {Right}
-        Sleep, 100
+        Sleep, 30
     }
+
     Loop, 4 {
         imagePath := A_ScriptDir . "\Images\Camera" . A_Index . ".png"
         ImageSearch, FoundX, FoundY, (((X+557)/1936)*W), (((Y+218)/1056)*H), (((X+1376)/1936)*W), (((Y+910)/1056)*H), *80 %imagePath%
@@ -447,11 +429,7 @@ SetCameraMode(number) {
         distance := mode - number
         if (distance > 0) {
             Loop, %distance% {
-                if (CameraSettingAtBottom) {
-                    ClickRelative(907, 409, 1)
-                } else {
-                    ClickRelative(904, 324, 1)
-                }
+                Send, {Left}
                 Sleep, 100
             }
         } else if (distance < 0) {
@@ -627,6 +605,7 @@ ReconnectToGame() {
                 SetStatus("Successfully joined game!")
                 ClickRelative(0.5, 0.5)
                 MapSide := ""
+                global NeedsAlignment := true
                 CheckForAdRewards()
                 break
             }
@@ -1044,6 +1023,7 @@ CheckForAdRewards() {
             SetStatus("Ad Rewards Button Not Detected")
         }
         AdRewards := false
+        SetTimer, CheckForAdRewardsLabel, -1000
     }
     Return AdRewards
 }
@@ -1192,7 +1172,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.043"
+    currentVersion := "Campfire1.05"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1774,11 +1754,13 @@ SavePollenRadarSlot:
 Return
 
 SettingsGui:
+    global CameraModePos
+
     Gui, Destroy
     Gui, New, +Resize, Settings
 
     ; Create tab control
-    Gui, Add, Tab2, x10 y10 w280 h200, General|Hotkeys|Positioning|Reconnect
+    Gui, Add, Tab2, x10 y10 w280 h200, General|Roblox|Hotkeys|Positioning|Reconnect
 
     ; === General Tab ===
     Gui, Add, Text, x20 y50, Auto Align Camera:
@@ -1817,9 +1799,15 @@ SettingsGui:
     Gui, Add, Checkbox, vSettingsStart x150 y175
     GuiControl,, SettingsStart, %SettingsStart%
 
+    ; === Roblox Tab ===
+    Gui, Tab, 2
+    Gui, Add, Text, x20 y50, Camera Mode Position:
+    Gui, Add, Edit, vCameraModePosEdit Number x150 y48 w100
+    GuiControl,, CameraModePosEdit, %CameraModePos%
+
 
     ; === Hotkeys Tab ===
-    Gui, Tab, 2
+    Gui, Tab, 3
     Gui, Add, Text, x20 y50, Start Hotkey:
     Gui, Add, Edit, vStartHotkeyEdit x150 y48 w100
     GuiControl,, StartHotkeyEdit, %StartHotkey%
@@ -1842,13 +1830,13 @@ SettingsGui:
 
 
     ; === Positioning Tab ===
-    Gui, Tab, 3
+    Gui, Tab, 4
     Gui, Add, Button, x20 y50 w100 h35 gSetBackpackPos, Set Backpack Button Position
 
     Gui, Add, Button, x130 y50 w100 h35 gSetFavoritePos, Set Favorite Button Position
 
     ; === Reconnect Tab ===
-    Gui, Tab, 4
+    Gui, Tab, 5
     Gui, Add, Text, x20 y40 w150, VIP Server Link:
     Gui, Add, Edit, x20 y60 w200 h20 vVipLink, %VIP_SERVER_LINK%
     Gui, Add, Text, x20 y90 w120, Auto Reconnect:
@@ -1878,6 +1866,9 @@ SaveSettings:
     IniWrite, %HarvestTimeEdit%, config.ini, Settings, HarvestTime
     IniWrite, %AutoSellPlants%, config.ini, Settings, AutoSellPlants
     IniWrite, %SettingsStart%, config.ini, Settings, SettingsStart
+
+    ; Save Roblox to INI
+    IniWrite, %CameraModePos%, config.ini, Settings, CameraModePos
 
 
     ; Save hotkeys to INI
@@ -3440,5 +3431,23 @@ CampfireCraftingLabel:
         Sleep, 1000
         ClickRelative(1413, 279, 1)
         Sleep, 1000
+    }
+Return
+
+CheckForAdRewardsLabel:
+    global AdRewards
+    ;ClickRelative(486, 141, 1)
+    if PixelColorFound(0x8A88F0, 430, 100, 550, 200, 10) {
+        if !(AdRewards) {
+            SetStatus("Ad Rewards Button Detected")
+        }
+        AdRewards := true
+    } else {
+        if (AdRewards) {
+            SetStatus("Ad Rewards Button Not Detected")
+        }
+        AdRewards := false
+
+        SetTimer, CheckForAdRewardsLabel, -1000
     }
 Return
