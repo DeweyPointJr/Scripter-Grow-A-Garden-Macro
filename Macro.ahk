@@ -84,6 +84,9 @@ IniRead, CampfireItem1, %iniFile%, Campfire, CampfireItem1, "None"
 IniRead, CampfireItem2, %iniFile%, Campfire, CampfireItem2, "None"
 IniRead, CampfireItem3, %iniFile%, Campfire, CampfireItem3, "None"
 
+IniRead, FeedBearnaby, %iniFile%, Campfire, FeedBearnaby, 0
+IniRead, FeedBearnabyAmount, %iniFile%, Campfire, FeedBearnabyAmount, 1
+
 IniRead, WaitForRestocks, %iniFile%, Settings, WaitForRestocks, 1
 
 IniRead, CameraModePos, %iniFile%, Settings, CameraModePos, 2
@@ -1172,7 +1175,7 @@ SetStatus(status) {
 }
 
 CheckForUpdate() {
-    currentVersion := "Campfire1.051"
+    currentVersion := "CampfirePart2v1.0"
     latestURL := "https://api.github.com/repos/DeweyPointJr/Scripter-Grow-A-Garden-Macro/releases/latest"
 
     whr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
@@ -1342,7 +1345,7 @@ MainGui:
     Gui, New, +Resize, Scripter Macro
 
     ; Title label at the top
-    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [CAMPFIRE]
+    Gui, Add, Text, w180 h30 Center vTitleText, Scripter Grow A Garden Macro [CAMPFIRE Part 2]
 
     ; Buttons stacked vertically
     Gui, Add, Button, w180 h40 gShopsGui, Shops
@@ -1616,16 +1619,25 @@ CampfireGui:
 
     Gosub, SaveFuelCampfire
 
-    Gui, Add, Text, x10 y25, Crafting Item 1:
-    Gui, Add, DropDownList, x90 y23 w135 vCampfireItem1 gSaveCampfireItems, %campfireOrderString%
+    Gui, Add, Text, x10 y25, Feed Bearnaby:
+    Gui, Add, Checkbox, vFeedBearnaby gSaveFeedBearnaby x87 y25
+    GuiControl,, FeedBearnaby, %FeedBearnaby%
+
+    Gui, Add, Edit, x115 y23 w30 h20 Number  Hidden vFeedBearnabyAmount gSaveFeedBearnaby, %FeedBearnabyAmount%
+    Gui, Add, Text, x150 y25 vBearnabyAmountText Hidden, times
+
+    Gosub, SaveFeedBearnaby
+
+    Gui, Add, Text, x10 y50, Crafting Item 1:
+    Gui, Add, DropDownList, x90 y48 w135 vCampfireItem1 gSaveCampfireItems, %campfireOrderString%
     GuiControl, ChooseString, CampfireItem1, %CampfireItem1%
 
-    Gui, Add, Text, x10 y50, Crafting Item 2:
-    Gui, Add, DropDownList, x90 y48 w135 vCampfireItem2 gSaveCampfireItems, %campfireOrderString%
+    Gui, Add, Text, x10 y75, Crafting Item 2:
+    Gui, Add, DropDownList, x90 y73 w135 vCampfireItem2 gSaveCampfireItems, %campfireOrderString%
     GuiControl, ChooseString, CampfireItem2, %CampfireItem2%
 
-    Gui, Add, Text, x10 y75, Crafting Item 3:
-    Gui, Add, DropDownList, x90 y73 w135 vCampfireItem3 gSaveCampfireItems, %campfireOrderString%
+    Gui, Add, Text, x10 y100, Crafting Item 3:
+    Gui, Add, DropDownList, x90 y98 w135 vCampfireItem3 gSaveCampfireItems, %campfireOrderString%
     GuiControl, ChooseString, CampfireItem3, %CampfireItem3%
 
     if (CampfireItem1 = "None") {
@@ -1643,7 +1655,21 @@ CampfireGui:
     Gui, Add, Button, x30 w180 h40 gCraftEventsGui, Back
 
     ; Show GUI
-    Gui, Show, w240 h145, Scripter Macro
+    Gui, Show, w240 h170, Scripter Macro
+Return
+
+SaveFeedBearnaby:
+    Gui, Submit, NoHide
+
+    IniWrite, %FeedBearnaby%, %iniFile%, Campfire, FeedBearnaby
+    IniWrite, %FeedBearnabyAmount%, %iniFile%, Campfire, FeedBearnabyAmount
+    if (FeedBearnaby) {
+        GuiControl, Show, FeedBearnabyAmount
+        GuiControl, Show, BearnabyAmountText
+    } else {
+        GuiControl, Hide, FeedBearnabyAmount
+        GuiControl, Hide, BearnabyAmountText
+    }
 Return
 
 SaveCampfireItems:
@@ -3095,6 +3121,9 @@ Return
 
 AddFifteenMinuteTasks:
     AddTask("DoCrafting")
+    if (FeedBearnaby) {
+        AddTask("FeedBearnabyLabel")
+    }
 Return
 
 AddThirtyMinuteTasks:
@@ -3448,5 +3477,35 @@ CheckForAdRewardsLabel:
         AdRewards := false
 
         SetTimer, CheckForAdRewardsLabel, -1000
+    }
+Return
+
+FeedBearnabyLabel:
+    ; Walk to Bearnaby
+    SetStatus("Feeding Bearnaby")
+
+    if (UseEventLanterns) {
+       Send, {EventLanternSlot}
+       ClickRelative(0.5, 0.5) 
+    } else {
+        ClickRelative(1280, 140, 1)
+        ClickRelative(0.5, 0.5)
+        Sleep, 1000
+        Send, {d}
+        Walk("d", 6750)
+        Send, {w}
+        Walk("w", 1500)
+    }
+
+    ; Feeding loop
+    Loop, %FeedBearnabyAmount% {
+        Send, {e}
+        Sleep, 2500
+        ClickRelative(1375, 549, 1)
+        Sleep, 4000
+        Send, {e}
+        Sleep, 2500
+        ClickRelative(1321, 497, 1)
+        Sleep, 4000
     }
 Return
